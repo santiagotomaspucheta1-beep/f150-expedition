@@ -573,14 +573,55 @@ function migrateStops(stops) {
   return hasChanges;
 }
 
+function migrateItems(items) {
+  let hasChanges = false;
+  const defaultObj = {};
+  DEFAULT_ITEMS.forEach(di => { defaultObj[di.name] = di; });
+
+  // 1. Fusionar links y notas nuevos en items existentes
+  items.forEach(item => {
+    const di = defaultObj[item.name];
+    if (di) {
+      if (!item.links) { item.links = []; hasChanges = true; }
+      if (!item.notes) { item.notes = []; hasChanges = true; }
+      
+      di.links.forEach(dl => {
+        if (!item.links.some(l => l.u === dl.u)) {
+          item.links.push(dl);
+          hasChanges = true;
+        }
+      });
+      di.notes.forEach(dn => {
+        if (!item.notes.some(n => n.tx === dn.tx)) {
+          item.notes.push(dn);
+          hasChanges = true;
+        }
+      });
+    }
+  });
+
+  // 2. Agregar items que falten por completo
+  const existingNames = new Set(items.map(i => i.name));
+  DEFAULT_ITEMS.forEach(di => {
+    if (!existingNames.has(di.name)) {
+      items.push(JSON.parse(JSON.stringify(di)));
+      hasChanges = true;
+    }
+  });
+
+  return hasChanges;
+}
+
 let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)) };
 
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
   if (doc.exists) {
     state = doc.data();
-    const didMigrate = migrateStops(state.stops);
-    if (didMigrate) {
+    if (!state.items) state.items = [];
+    const didMigrateStops = migrateStops(state.stops);
+    const didMigrateItems = migrateItems(state.items);
+    if (didMigrateStops || didMigrateItems) {
       save();
     }
   } else {
