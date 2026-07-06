@@ -1,0 +1,37 @@
+# MEMORIA DEL PROYECTO — Panamerican Expedition
+
+> Propósito: si retomás este proyecto en otro chat o computadora, pegá o compartí este archivo para dar todo el contexto. Mantener actualizado al final de cada sesión de trabajo.
+
+## Quiénes y qué
+
+- **Viajeros**: Martín Pucheta + Lula + Samy (perro).
+- **Vehículo**: Ford F-150 2019, V8 5.0, con canopy camper ya armado para dormir (fotos en `Fotos camioneta/`).
+- **Viaje**: EEUU → México → Centroamérica → Argentina, por tierra.
+- **Salida**: 10 de agosto de 2026 desde Chattanooga, TN. Máximo ~60 días en EEUU (margen migratorio de 2 meses).
+
+## Decisiones tomadas
+
+1. **Punto de partida**: Chattanooga (confirmado 2026-07-05).
+2. **Ruta EEUU (híbrida, V2)**: Chattanooga → Ozarks/Buffalo River (AR) → Kansas (Monument Rocks) → Badlands/Black Hills (SD) → Devils Tower → Bozeman → Glacier (MT) → Yellowstone/Grand Teton (WY) → Colorado (RMNP, Denver, Million Dollar Hwy) → Utah (Moab, Capitol Reef, Bryce, Zion) → California (Sequoia, Yosemite, SF, Hwy 1, Big Sur, San Diego) → Nogales.
+   - Se descartaron: Idaho, Oregon, Redwoods, Oklahoma. Reemplazan al eje del Roadbook V1.
+3. **México inicio**: Nogales → Hermosillo (amigos, obligatorio) → Baja de norte a sur → ferry desde La Paz (Mazatlán o Topolobampo, sin decidir).
+4. **Mapa**: HTML interactivo (`Mapa_Ruta.html`) + KML para Google My Maps (`Ruta_Panamerican.kml`).
+
+## Pendientes / decisiones abiertas
+
+- Ferry: destino (Mazatlán vs Topolobampo), operador (Baja Ferries vs TMC), reglas para Samy.
+- Compras/proyectos vehículo: portón automático, tapar ventanas por dentro, soporte celular, Starlink vs eSIM, pantalla F-150 (CarPlay roto — diagnosticar USB hub primero), cámara + sensores retroceso, proyector, drone (<250g sugerido).
+- Ruta post-ferry: México central y Centroamérica sin planificar todavía.
+- Presupuesto diario sin definir.
+
+## Convenciones de trabajo
+
+- `PLAN.md` es el documento maestro; toda decisión nueva se registra ahí y se resume acá.
+- Fechas en formato bloque (ver tabla en PLAN.md); no son rígidas.
+- Prioridades irrenunciables según Roadbook V1: Montana, California, Hermosillo, Baja.
+- Con Samy: parques nacionales = scenic drives; los días buenos de perro son en National Forests/BLM/state parks.
+
+## Historial de sesiones
+
+- **2026-07-05**: Sesión inicial. Se leyó Roadbook V1, se definió ruta híbrida V2 con bloques y fechas, se creó PLAN.md, mapa HTML y KML, y se registró la lista de compras/proyectos.
+- **2026-07-05 (2)**: `Mapa_Ruta.html` pasó a ser una app con 2 páginas: Mapa (editable: agregar/editar/borrar/reordenar paradas con fecha, botón "Navegar" que abre Google Maps) y Compras (checklist por categorías Samy/Auto/Nosotros/Trámites con ~31 ítems, links y notas editables). Los cambios se guardan en el navegador (localStorage); para pasar a otra compu usar botones Exportar/Importar (archivo `panamerican_datos.json`). La lista de compras completa vive ahora en la app, no en PLAN.md.

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F150 Overlanding Hub</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-purple: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 1050px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-content p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            margin-top: auto;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s ease;
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            display: inline-block;
+        }
+        
+        .card.map .btn {
+            background: var(--accent-green);
+        }
+
+        .card.shop .btn {
+            background: var(--accent-orange);
+        }
+
+        .card.cal .btn {
+            background: var(--accent-purple);
+        }
+
+        .card:hover .btn {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Panamerican Expedition</h1>
+        <p>Hub central para planificar la ruta y configurar el camper de la F150. Todo sincronizado en la nube para acceder desde tu celular o computadora.</p>
+    </div>
+
+    <div class="grid">
+        <a href="mapa.html#map" class="card map">
+            <div class="icon-wrapper">🗺️</div>
+            <div class="card-content">
+                <h2>Mapa de Ruta</h2>
+                <p>Planifica las paradas y visualiza la ruta de viaje completa desde EE.UU. a Sudamérica paso a paso.</p>
+            </div>
+            <span class="btn">Abrir Mapa</span>
+        </a>
+
+        <a href="mapa.html#cal" class="card cal">
+            <div class="icon-wrapper">📅</div>
+            <div class="card-content">
+                <h2>Calendario de Viaje</h2>
+                <p>Visualiza el cronograma en un gráfico de Gantt interactivo. Ajusta las fechas de estadía en cada lugar.</p>
+            </div>
+            <span class="btn">Abrir Calendario</span>
+        </a>
+
+        <a href="mapa.html#shop" class="card shop">
+            <div class="icon-wrapper">🛒</div>
+            <div class="card-content">
+                <h2>Lista de Compras</h2>
+                <p>Gestiona los ítems pendientes y recomendados para Samy (perro), el auto, trámites y campamento.</p>
+            </div>
+            <span class="btn">Abrir Compras</span>
+        </a>
+
+        <a href="configurador.html" class="card config">
+            <div class="icon-wrapper">🚙</div>
+            <div class="card-content">
+                <h2>Configurador 3D</h2>
+                <p>Diseña el layout 3D del camper en la caja de la camioneta. Ajusta dimensiones, módulos y equipamiento.</p>
+            </div>
+            <span class="btn">Abrir Configurador</span>
+        </a>
+    </div>
+
+</body>
+</html>

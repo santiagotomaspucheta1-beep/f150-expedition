@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panamerican Expedition — Mapa + Compras</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; font-family: system-ui, sans-serif; background:#f4f4f2; }
+  header { display:flex; align-items:center; gap:8px; padding:8px 14px; background:#1e2a32; color:#fff; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0 14px 0 0; }
+  .tab-btn { background:#37474f; color:#fff; border:none; padding:7px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
+  .tab-btn.active { background:#f9a825; color:#1e2a32; font-weight:700; }
+  .tools { margin-left:auto; display:flex; gap:6px; }
+  .tools button { background:none; border:1px solid #607d8b; color:#cfd8dc; padding:5px 10px; border-radius:7px; cursor:pointer; font-size:12px; }
+  #app { height: calc(100% - 50px); }
+  /* ---- MAPA ---- */
+  #page-map { height:100%; display:flex; }
+  /* ---- CALENDARIO ---- */
+  #page-cal { background: #0d0f14; }
+  #map { flex:1; height:100%; }
+  #sidebar { width:320px; overflow-y:auto; background:#fff; border-right:1px solid #ddd; padding:10px; }
+  #sidebar h2 { font-size:14px; margin:4px 0 8px; }
+  .stop-row { display:flex; align-items:center; gap:6px; padding:6px 6px; border-radius:8px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
+  .stop-row:hover { background:#fff8e1; }
+  .stop-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .stop-info { flex:1; min-width:0; }
+  .stop-name { font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .stop-date { font-size:11px; color:#e65100; font-weight:600; }
+  .mini { background:#eceff1; border:none; border-radius:5px; cursor:pointer; font-size:11px; padding:2px 5px; }
+  .add-stop-btn { width:100%; margin:8px 0; padding:9px; background:#2e7d32; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; }
+  .add-stop-btn.arm { background:#c62828; }
+  .popup-btns { display:flex; gap:5px; margin-top:7px; flex-wrap:wrap; }
+  .popup-btns button, .popup-btns a { font-size:12px; padding:5px 9px; border-radius:6px; border:none; cursor:pointer; text-decoration:none; }
+  .nav-btn { background:#1565c0; color:#fff !important; }
+  .edit-btn { background:#f9a825; }
+  .del-btn { background:#ffcdd2; }
+  /* ---- COMPRAS ---- */
+  #page-shop { height:100%; overflow-y:auto; padding:16px; display:none; }
+  .shop-wrap { max-width:900px; margin:0 auto; }
+  .progress { background:#fff; border-radius:10px; padding:12px 16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,.08); font-size:14px; }
+  .bar { height:10px; background:#eceff1; border-radius:6px; overflow:hidden; margin-top:6px; }
+  .bar div { height:100%; background:#2e7d32; transition:width .3s; }
+  .cat { background:#fff; border-radius:12px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.08); overflow:hidden; }
+  .cat h3 { margin:0; padding:11px 16px; font-size:15px; color:#fff; }
+  .item { padding:10px 16px; border-bottom:1px solid #f0f0f0; }
+  .item-top { display:flex; align-items:center; gap:10px; }
+  .item-top input[type=checkbox] { width:19px; height:19px; cursor:pointer; flex-shrink:0; }
+  .item-name { flex:1; font-size:14px; font-weight:600; }
+  .item.done .item-name { text-decoration:line-through; color:#9e9e9e; font-weight:400; }
+  .item-actions { display:flex; gap:4px; }
+  .item-actions button { background:#f5f5f5; border:1px solid #e0e0e0; border-radius:6px; cursor:pointer; font-size:11.5px; padding:3px 8px; }
+  .note { font-size:12.5px; color:#555; background:#fffde7; border-left:3px solid #f9a825; padding:5px 9px; margin:6px 0 0 29px; border-radius:0 6px 6px 0; }
+  .note b { color:#7b6000; }
+  .link-row { margin:5px 0 0 29px; font-size:12.5px; }
+  .link-row a { color:#1565c0; word-break:break-all; }
+  .del-x { color:#c62828; cursor:pointer; margin-left:6px; font-weight:700; }
+  .add-item { display:flex; gap:8px; padding:10px 16px; background:#fafafa; }
+  .add-item input { flex:1; padding:7px 10px; border:1px solid #ddd; border-radius:7px; font-size:13px; }
+  .add-item button { background:#2e7d32; color:#fff; border:none; border-radius:7px; padding:7px 14px; cursor:pointer; }
+  /* ---- MODAL ---- */
+  #modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:2000; align-items:center; justify-content:center; }
+  #modal { background:#fff; border-radius:12px; padding:20px; width:min(430px, 92vw); max-height:90vh; overflow-y:auto; }
+  #modal h3 { margin:0 0 12px; font-size:16px; }
+  #modal label { display:block; font-size:12px; color:#666; margin:9px 0 3px; }
+  #modal input, #modal select, #modal textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:7px; font-size:13.5px; font-family:inherit; }
+  .modal-btns { display:flex; gap:8px; margin-top:16px; }
+  .modal-btns button { flex:1; padding:10px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
+  #m-save { background:#2e7d32; color:#fff; }
+  #m-cancel { background:#eceff1; }
+  /* ---- TIMELINE GANTT ---- */
+  #page-cal {
+    background: #0d0f14;
+    min-height: 100%;
+    padding: 20px;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .cal-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    animation: calFadeIn 0.4s ease;
+  }
+  .cal-stat-card {
+    background: linear-gradient(135deg, #161920 0%, #1a1e28 100%);
+    border: 1px solid #2a2f3d;
+    border-radius: 12px;
+    padding: 14px 20px;
+    min-width: 140px;
+    flex: 1;
+    text-align: center;
+  }
+  .cal-stat-card .val {
+    font-size: 28px;
+    font-weight: 800;
+    color: #e8c14b;
+    line-height: 1;
+  }
+  .cal-stat-card .lbl {
+    font-size: 11px;
+    color: #7f8c9d;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .cal-layout {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    animation: calFadeIn 0.5s ease;
+  }
+  .gantt-wrapper {
+    flex: 1;
+    overflow-x: auto;
+    background: #101216;
+    border: 1px solid #23272f;
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    min-width: 0;
+  }
+  .gantt-wrapper::-webkit-scrollbar { height: 8px; background: #0d0f14; }
+  .gantt-wrapper::-webkit-scrollbar-thumb { background: #2a2f3d; border-radius: 6px; }
+  .gantt-wrapper::-webkit-scrollbar-thumb:hover { background: #3d4455; }
+  .gantt-table { border-collapse: collapse; min-width: 100%; font-size: 12px; color: #c6ccd6; }
+  .gantt-table th, .gantt-table td { user-select: none; }
+  .gantt-row td:first-child { cursor: pointer; transition: color 0.15s; }
+  .gantt-row:hover td:first-child { color: #e8c14b !important; }
+  .gantt-row:hover { background: rgba(255,255,255,0.025); }
+  .gantt-bar {
+    height: 28px;
+    display: flex;
+    align-items: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    overflow: hidden;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.15s;
+  }
+  .gantt-bar:hover { filter: brightness(1.2); transform: scaleY(1.06); }
+  .gantt-bar span { padding: 0 8px; text-shadow: 0 1px 3px rgba(0,0,0,0.6); pointer-events: none; }
+  .today-marker { background: rgba(232,193,75,0.18); }
+  .today-marker::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: #e8c14b;
+    pointer-events: none;
+  }
+  /* Detail panel */
+  .cal-detail {
+    width: 260px;
+    flex-shrink: 0;
+    background: linear-gradient(160deg, #161920 0%, #1a1e28 100%);
+    border: 1px solid #2a2f3d;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    transition: opacity 0.25s, transform 0.25s;
+  }
+  .cal-detail.hidden { opacity: 0; transform: translateX(12px); pointer-events: none; }
+  .cal-detail-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid #23272f;
+  }
+  .cal-detail-header .det-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: #7f8c9d;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+  }
+  .cal-detail-header .det-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.3;
+  }
+  .cal-detail-body { padding: 14px 18px; }
+  .cal-detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+  }
+  .cal-detail-row .det-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .cal-detail-row .det-text { color: #c6ccd6; line-height: 1.4; }
+  .cal-detail-row .det-text strong { color: #f8fafc; display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7f8c9d; margin-bottom: 1px; }
+  .cal-detail-foot {
+    padding: 12px 18px;
+    border-top: 1px solid #1a1d24;
+    display: flex;
+    gap: 8px;
+  }
+  .cal-detail-foot button {
+    flex: 1;
+    padding: 9px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    transition: filter 0.15s;
+  }
+  .cal-detail-foot button:hover { filter: brightness(1.15); }
+  .det-btn-map { background: #1565c0; color: #fff; }
+  .det-btn-edit { background: #2a2f3d; color: #e8c14b; }
+  @keyframes calFadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: none; } }
+  @media (max-width:700px){ #sidebar{ width:170px; } }
+  /* ---- ETIQUETAS EN EL MAPA ---- */
+  /* Wrapper transparente: elimina fondo y flecha nativa de Leaflet */
+  .map-tooltip-wrap.leaflet-tooltip {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    pointer-events: none;
+  }
+  .map-tooltip-wrap.leaflet-tooltip::before { display: none; }
+  /* Chip de parada del camino principal */
+  .lbl-chip-stop {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.96);
+    border-radius: 20px;
+    padding: 3px 10px 3px 4px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a1a1a;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12);
+    border-left: 4px solid #546e7a;
+    letter-spacing: 0.1px;
+    pointer-events: none;
+  }
+  .lbl-chip-stop .lbl-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 800;
+    color: #fff;
+    padding: 0 2px;
+    flex-shrink: 0;
+  }
+  /* Chip de punto Vida Nomada (marker DivIcon — siempre en el mapa a nivel DOM) */
+  .lbl-chip-poi {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255,248,245,0.97);
+    border-radius: 20px;
+    padding: 2px 9px 2px 5px;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: #bf360c;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(255,87,34,0.25), 0 1px 3px rgba(0,0,0,0.14);
+    border-left: 3px solid #ff5722;
+    letter-spacing: 0.1px;
+    pointer-events: none;
+    user-select: none;
+  }
+  /* Controles Vida Nomada en sidebar */
+  .poi-control-card {
+    background: linear-gradient(135deg,#fff8f5 0%,#fff3ee 100%);
+    border: 1px solid #ffccbc;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .poi-control-card .poi-card-title {
+    font-weight: 800;
+    font-size: 12.5px;
+    color: #bf360c;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .poi-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background .15s;
+  }
+  .poi-toggle-row:hover { background: rgba(255,87,34,0.07); padding-left:4px; }
+  .poi-toggle-row input[type=checkbox] {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    accent-color: #ff5722;
+    flex-shrink: 0;
+  }
+  .poi-toggle-row span {
+    font-size: 12px;
+    color: #37474f;
+    font-weight: 600;
+    user-select: none;
+  }
+  .poi-toggle-row .poi-toggle-badge {
+    margin-left: auto;
+    background: #ffccbc;
+    color: #bf360c;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 7px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚙 Panamerican Expedition</h1>
+  <button class="tab-btn active" id="tab-map" onclick="showTab('map')">🗺️ Mapa</button>
+  <button class="tab-btn" id="tab-shop" onclick="showTab('shop')">🛒 Compras</button>
+  <button class="tab-btn" id="tab-cal" onclick="showTab('cal')">📅 Calendario</button>
+</header>
+
+<div id="app">
+  <div id="page-map">
+    <div id="sidebar">
+      <h2>Paradas (en orden de viaje)</h2>
+      <button class="add-stop-btn" id="btn-add" onclick="armAdd()">＋ Agregar parada (luego tocá el mapa)</button>
+      
+      <!-- Controles de capa Paradas -->
+      <div class="poi-control-card" style="background:linear-gradient(135deg,#f5f8ff 0%,#eef3ff 100%); border-color:#c5cae9;">
+        <div class="poi-card-title" style="color:#1565c0;">🚙 Paradas del viaje</div>
+        <label class="poi-toggle-row">
+          <input type="checkbox" id="chk-stop-labels" onchange="toggleStopLabels(this.checked)">
+          <span>🏷️ Mostrar etiquetas</span>
+          <span class="poi-toggle-badge" style="background:#c5cae9;color:#1565c0;">texto</span>
+        </label>
+      </div>
+
+      <!-- Controles de capa Vida Nómada -->
+      <div class="poi-control-card">
+        <div class="poi-card-title">🗺️ Vida Nómada <span style="font-weight:400;font-size:11px;color:#e64a19;">(39 lugares)</span></div>
+        <label class="poi-toggle-row">
+          <input type="checkbox" id="chk-poi-circles" onchange="togglePoiCircles(this.checked)" checked>
+          <span>📍 Mostrar puntos</span>
+          <span class="poi-toggle-badge">círculos</span>
+        </label>
+        <label class="poi-toggle-row">
+          <input type="checkbox" id="chk-poi-labels" onchange="togglePoiLabels(this.checked)">
+          <span>🏷️ Mostrar etiquetas</span>
+          <span class="poi-toggle-badge">texto</span>
+        </label>
+      </div>
+
+      <div id="stop-list"></div>
+    </div>
+    <div id="map"></div>
+  </div>
+  <div id="page-shop">
+    <div class="shop-wrap">
+      <div class="progress">
+        <b>Progreso de compras:</b> <span id="prog-txt"></span>
+        <div class="bar"><div id="prog-bar" style="width:0%"></div></div>
+      </div>
+      <div id="cats"></div>
+    </div>
+  </div>
+  <div id="page-cal" style="display:none; height:100%; overflow-y:auto;"></div>
+</div>
+
+<div id="modal-bg">
+  <div id="modal">
+    <h3 id="m-title">Editar parada</h3>
+    <label>Nombre del lugar</label><input id="m-name">
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;"><label style="margin:6px 0 3px;">Fecha Inicio</label><input id="m-start" type="date"></div>
+      <div style="flex:1;"><label style="margin:6px 0 3px;">Fecha Fin</label><input id="m-end" type="date"></div>
+    </div>
+    <label>Nota</label><textarea id="m-note" rows="2"></textarea>
+    <label>Latitud</label><input id="m-lat" type="number" step="any">
+    <label>Longitud</label><input id="m-lon" type="number" step="any">
+    <label id="m-pos-lbl">Insertar después de</label><select id="m-pos"></select>
+    <div class="modal-btns">
+      <button id="m-cancel" onclick="closeModal()">Cancelar</button>
+      <button id="m-save" onclick="saveModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= DATOS POR DEFECTO ================= */
+const DEFAULT_STOPS = [
+ {n:"Chattanooga, TN — SALIDA", start:"2026-08-10", end:"2026-08-10", lat:35.0456, lon:-85.3097, b:1, note:"Punto de partida. Test final de equipo."},
+ {n:"Ozark NF / Buffalo River, AR", start:"2026-08-10", end:"2026-08-13", lat:36.02, lon:-93.36, b:1, note:"Primer test del camper, ríos y sombra para Samy."},
+ {n:"Monument Rocks, KS", start:"2026-08-14", end:"2026-08-15", lat:38.79, lon:-100.76, b:2, note:"Día de cruce de las Great Plains."},
+ {n:"Badlands NP, SD", start:"2026-08-16", end:"2026-08-19", lat:43.855, lon:-102.34, b:3, note:"Amanecer/atardecer, scenic loop."},
+ {n:"Black Hills / Custer SP / Rushmore, SD", start:"2026-08-16", end:"2026-08-19", lat:43.76, lon:-103.45, b:3, note:"Custer SP es dog-friendly."},
+ {n:"Devils Tower, WY", start:"2026-08-19", end:"2026-08-19", lat:44.590, lon:-104.715, b:3, note:"Parada corta en ruta a Montana."},
+ {n:"Bozeman, MT", start:"2026-08-20", end:"2026-08-20", lat:45.677, lon:-111.043, b:4, note:"Abastecimiento, laundry, service."},
+ {n:"Glacier NP, MT", start:"2026-08-20", end:"2026-08-24", lat:48.50, lon:-113.99, b:4, note:"Medir dimensiones antes de Going-to-the-Sun Rd."},
+ {n:"Yellowstone NP, WY", start:"2026-08-25", end:"2026-08-31", lat:44.46, lon:-110.83, b:5, note:"Perros solo en áreas desarrolladas."},
+ {n:"Grand Teton / Jackson, WY", start:"2026-08-25", end:"2026-08-31", lat:43.48, lon:-110.76, b:5, note:"Cierre del bloque norte."},
+ {n:"Rocky Mountain NP / Estes Park, CO", start:"2026-09-01", end:"2026-09-07", lat:40.377, lon:-105.52, b:6, note:"Trail Ridge Road."},
+ {n:"Denver, CO", start:"2026-09-01", end:"2026-09-07", lat:39.74, lon:-104.99, b:6, note:"ÚLTIMA gran ciudad para compras y service antes de México."},
+ {n:"Ouray / Million Dollar Hwy, CO", start:"2026-09-01", end:"2026-09-07", lat:38.02, lon:-107.67, b:6, note:"US-550, San Juan Mountains."},
+ {n:"Moab — Arches + Canyonlands, UT", start:"2026-09-08", end:"2026-09-14", lat:38.61, lon:-109.55, b:7, note:"Mucho BLM camping."},
+ {n:"Capitol Reef NP, UT", start:"2026-09-08", end:"2026-09-14", lat:38.29, lon:-111.26, b:7, note:"Scenic Byway 24."},
+ {n:"Bryce Canyon NP, UT", start:"2026-09-08", end:"2026-09-14", lat:37.59, lon:-112.19, b:7, note:"Rim pavimentado apto con perro."},
+ {n:"Zion NP, UT", start:"2026-09-08", end:"2026-09-14", lat:37.30, lon:-113.03, b:7, note:"Pa'rus Trail admite perros."},
+ {n:"Las Vegas, NV (paso)", start:"2026-09-15", end:"2026-09-15", lat:36.17, lon:-115.14, b:8, note:"Paso logístico. Evitar Death Valley con Samy (calor)."},
+ {n:"Sequoia NP, CA", start:"2026-09-15", end:"2026-09-17", lat:36.49, lon:-118.57, b:8, note:""},
+ {n:"Yosemite NP, CA", start:"2026-09-18", end:"2026-09-20", lat:37.865, lon:-119.54, b:8, note:"Reservar camping con anticipación."},
+ {n:"San Francisco, CA", start:"2026-09-21", end:"2026-09-22", lat:37.77, lon:-122.42, b:8, note:"Ciudad + Golden Gate."},
+ {n:"Big Sur / Highway 1, CA", start:"2026-09-23", end:"2026-09-24", lat:36.27, lon:-121.81, b:8, note:"Costa con calma."},
+ {n:"Los Ángeles, CA", start:"2026-09-25", end:"2026-09-25", lat:34.05, lon:-118.24, b:8, note:"Paso / visita corta."},
+ {n:"San Diego, CA", start:"2026-09-26", end:"2026-09-26", lat:32.72, lon:-117.16, b:8, note:"Playas dog-friendly. Último punto costa EEUU."},
+ {n:"Nogales — cruce a México", start:"2026-09-27", end:"2026-09-27", lat:31.33, lon:-110.94, b:9, note:"FMM + certificado de salud de Samy."},
+ {n:"Hermosillo, Son.", start:"2026-09-27", end:"2026-10-01", lat:29.07, lon:-110.96, b:9, note:"Amigos, descanso, service, compras México."},
+ {n:"Mexicali / Tecate — entrada a Baja", start:"2026-10-02", end:"2026-10-02", lat:32.66, lon:-115.47, b:10, note:""},
+ {n:"Ensenada, BC", start:"2026-10-02", end:"2026-10-03", lat:31.87, lon:-116.60, b:10, note:""},
+ {n:"Guerrero Negro, BCS", start:"2026-10-05", end:"2026-10-05", lat:27.97, lon:-114.06, b:10, note:"Cruce del paralelo 28."},
+ {n:"San Ignacio, BCS", start:"2026-10-06", end:"2026-10-06", lat:27.28, lon:-112.90, b:10, note:"Oasis y misión."},
+ {n:"Mulegé / Bahía Concepción, BCS", start:"2026-10-07", end:"2026-10-09", lat:26.85, lon:-111.95, b:10, note:"Las mejores playas para acampar de Baja."},
+ {n:"Loreto, BCS", start:"2026-10-10", end:"2026-10-10", lat:26.01, lon:-111.35, b:10, note:"Pueblo mágico."},
+ {n:"La Paz, BCS — FERRY", start:"2026-10-11", end:"2026-10-12", lat:24.14, lon:-110.31, b:11, note:"Ferry a Mazatlán o Topolobampo. Confirmar reglas perro + TIP."},
+ {n:"Mazatlán, Sin. (destino tentativo)", start:"2026-10-13", end:"2026-10-13", lat:23.25, lon:-106.41, b:11, note:"Continúa hacia México central y Centroamérica…"}
+];
+
+const CATS = { samy:{t:"🐕 Samy", c:"#6a1b9a"}, auto:{t:"🚙 Auto", c:"#1565c0"}, nosotros:{t:"🏕️ Nosotros", c:"#2e7d32"}, tramites:{t:"📄 Trámites", c:"#c62828"} };
+
+const DEFAULT_ITEMS = [
+ // ---- SAMY ----
+ {cat:"samy", name:"Collar GPS", done:false, notes:[{by:"Claude", tx:"Tractive GPS (funciona en EEUU, México y casi toda Latam, requiere suscripción ~USD 5-10/mes) o AirTag como backup barato (no es GPS real, depende de iPhones cerca)."}], links:[{l:"Tractive", u:"https://tractive.com"}]},
+ {cat:"samy", name:"Escalera para el auto", done:false, notes:[{by:"Claude", tx:"Rampa telescópica o escalera plegable para que suba a la caja/camper sin saltar. Ver capacidad de peso y superficie antideslizante."}], links:[]},
+ {cat:"samy", name:"Chaleco", done:false, notes:[], links:[]},
+ {cat:"samy", name:"Bowls de comida", done:false, notes:[{by:"Claude", tx:"Plegables de silicona para viaje + uno con base antideslizante para el camper."}], links:[]},
+ {cat:"samy", name:"Canil", done:false, notes:[{by:"Claude", tx:"Si va en ferry probablemente exijan kennel rígido aprobado IATA. Comprarlo pensando en el ferry La Paz y posibles tramos aéreos."}], links:[]},
+ // ---- AUTO ----
+ {cat:"auto", name:"Pantalla / tablero (CarPlay no anda)", done:false, notes:[{by:"Claude", tx:"Que es el USB hub: es un modulo chico dentro del tablero (parte del sistema Sync 3) que gestiona las conexiones USB, incluido CarPlay. En muchas F-150 2015-2020 esa pieza falla con el tiempo y CarPlay deja de conectar aunque el resto de Sync 3 funcione bien. Es una falla comun y muy barata de arreglar: NO hay que cambiar la pantalla entera, se compra un adaptador/modulo de reemplazo y se enchufa en el lugar del original (detras de la pantalla o consola), sin herramientas especiales, unos 10-15 min. Probar esto ANTES de gastar en pantalla nueva o head unit aftermarket (10-20x mas caro)."}], links:[{l:"Adaptador USB hub Sync 2 a Sync 3 (Bestycar, ~USD 25, pick de Amazon)", u:"https://www.amazon.com/Bestycar-Harness-Adapter-Compatible-Mutimedia/dp/B07SGR8YCW/"},{l:"Modulo OEM Ford USB hub HC3Z-19A387-H (~USD 126, alternativa oficial)", u:"https://www.amazon.com/s?k=OEM+Ford+Carplay+USB+Hub+Module+HC3Z-19A387-H"}]},
+ {cat:"auto", name:"Portón automático", done:false, notes:[{by:"Claude", tx:"Para 2015-2020 no existe un kit todo-en-uno simple de apertura/cierre electrico (a diferencia de camionetas mas nuevas). Opciones reales: (a) Electric-Life Power Tailgate Lift Kit (~USD 431 en Summit Racing), motoriza el movimiento pero no es plug-and-play, requiere adaptar cableado; (b) amortiguador a gas tipo Tailgate Assist (~USD 60-100), solo frena la caida, no abre solo, mas simple y barato; (c) portón motorizado de una F-150 de desarmadero + programacion FORSCAN, mas barato en piezas pero requiere mano de obra especializada. Ninguna es DIY rapida - conviene resolverlo con un instalador en Denver (bloque 6), ultima ciudad grande antes de Mexico."}], links:[{l:"Buscar tailgate assist / power tailgate F150 en Amazon", u:"https://www.amazon.com/s?k=f150+tailgate+assist"}]},
+ {cat:"auto", name:"Cámara y sensores de retroceso", done:false, notes:[{by:"Claude", tx:"Como el canopy tapa la vista trasera por el espejo, la solucion mas practica es reemplazar el espejo retrovisor por uno con pantalla integrada (sistema aparte, no depende de la decision de la pantalla del tablero). AUTO-VOX T2 (4.3 pulgadas, cable, buena vision nocturna, ~USD 140) es el mas simple; AUTO-VOX T9 (9.35 pulgadas, touch, ~USD 190) si quieren mas superficie de imagen. Se instala clip-on sobre el espejo actual, camara con cable en la punta de la caja/porton. Si mas adelante ponen head unit grande en el tablero, ahi se puede sumar una segunda camara, pero el espejo resuelve el problema ya sin esperar esa decision."}], links:[{l:"AUTO-VOX T2 rear view mirror camera (~USD 140)", u:"https://www.amazon.com/s?k=auto-vox+t2+rear+view+mirror+camera"},{l:"AUTO-VOX T9 (pantalla mas grande, ~USD 190)", u:"https://www.amazon.com/s?k=auto-vox+t9+rear+view+mirror+camera"}]},
+ {cat:"auto", name:"Bolsitas para los zapatos", done:false, notes:[{by:"Claude", tx:"2 bolsas individuales (una por persona) que encierren el calzado completo, para separar barro/arena/humedad de la ropa. Knack Compressible Shoe Bag o Nomatic Shoe Cube tienen correa de compresion y son las mejor valoradas. Alternativa barata: IKEA PARKLA (~USD 3 c/u) si el presupuesto pesa mas que la durabilidad."}], links:[{l:"Shoe bags para viaje (comparar Knack / Nomatic / IKEA PARKLA)", u:"https://www.amazon.com/s?k=shoe+bag+travel+organizer+dirty+shoes"}]},
+ {cat:"auto", name:"Organizadores", done:false, notes:[{by:"Claude", tx:"Dos caminos segun presupuesto. Entrada: Plano Storage Trunk 108qt con ruedas (~USD 39, 4.6 estrellas, best seller) - simple y resistente para ropa/comida/uso general; comprar 2-3 y ver como entran en la caja con el canopy antes de invertir mas. Sistema modular: Front Runner Wolf Pack Pro + drawer kit, cajones deslizables con cajas removibles pensado para overlanding, mucho mas robusto pero cuesta varios cientos de USD y hay que medir el espacio exacto primero. Sugerencia: arrancar con Plano ahora; si hace falta upgrade, hacerlo en Denver (bloque 6) donde hay tiendas de overlanding."}], links:[{l:"Plano Storage Trunk 108qt con ruedas (~USD 39)", u:"https://www.amazon.com/s?k=plano+stackable+storage+trunk+truck+bed"},{l:"Front Runner Wolf Pack drawer kit (sistema modular)", u:"https://gtfoverland.com/products/front-runner-drawer-kit"}]},
+ {cat:"auto", name:"Bolsas de compresión", done:false, notes:[{by:"Claude", tx:"Para ropa (de ambos): cubos de compresion con correa/cierre (packing cubes), no bolsas al vacio (necesitan bomba y se rompen con el uso constante en ruta). Un set con varios tamaños, uno por persona + uno aparte para ropa sucia. Para bolsas de dormir/mantas: bolsas de compresion con correas tipo trekking, elegir tamaño segun el saco de dormir que compren."}], links:[{l:"Sets de compression packing cubes para viaje", u:"https://www.amazon.com/s?k=compression+packing+cubes+set+travel"}]},
+ {cat:"auto", name:"Batería auxiliar / energía", done:false, notes:[{by:"Claude", tx:"Para el camper (heladera DC, laptop, luces, celulares, Starlink/proyector) lo mas practico NO es gel ni LiFePO4 fija instalada (requiere instalacion electrica permanente). Recomendado: estacion de energia portatil LiFePO4 (EcoFlow o Bluetti) de ~1000Wh + panel solar plegable 100-200W, para cubrir varios dias sin sol. Si el uso es liviano (celus, luces, laptop): EcoFlow River 2 Max, 499Wh, ~USD 289. Si ademas corren heladera DC y proyector seguido: EcoFlow Delta 2 o Delta 3 Classic, 1024Wh, ~USD 429-439. Alternativa de mayor duracion/ciclos: Bluetti Elite 100 V2, 1024Wh, ~USD 449. Se carga desde el 12V del auto en ruta o con el panel solar en los campamentos."}], links:[{l:"EcoFlow River 2 Max / Delta 2 / Delta 3 (comparar capacidades)", u:"https://www.amazon.com/s?k=EcoFlow+portable+power+station"},{l:"Bluetti Elite 100 V2 (alternativa)", u:"https://www.amazon.com/s?k=Bluetti+Elite+100+V2"}]},
+ {cat:"auto", name:"Soporte de celular", done:false, notes:[{by:"Claude", tx:"Para la F-150 2019 (13a generacion), Bulletpoint tiene una base especifica que encastra en el hueco del tablero sin taladrar. Como pediste solo mecanico (sin carga inalambrica), la version Spring-Loaded es la indicada: es un clamp universal que sirve con cualquier funda, sin depender de MagSafe. ~USD 97, 4.8 estrellas, 560 reseñas."}], links:[{l:"Bulletpoint Metal Dash Mount F150 2015-2020, version Spring-Loaded (~USD 97)", u:"https://www.amazon.com/s?k=bulletpoint+ford+f150+2015-2020+dash+phone+mount+spring+loaded"}]},
+ {cat:"auto", name:"Tapar ventanas por dentro (cabina)", done:false, notes:[{by:"Claude", tx:"Tres niveles para las ventanas de cabina: (1) Economico/DIY: Reflectix cortado a medida (~USD 20 total), mejor aislacion termica, hay que cortarlo uno mismo por ventana. (2) Medio, a medida para F-150 2015-2020 SuperCrew: sets KUST o Canvcle de 6 piezas (parabrisas + laterales + trasera), malla que bloquea 99% UV y da privacidad sin tapar del todo la visibilidad, ~USD 50-54, 4.3-4.5 estrellas, miles de reseñas, faciles de poner y sacar. (3) Premium a medida: Snap Shades 13a generacion (2015-2020), ~USD 100, tela mas gruesa tipo cortina, instalacion a presion permanente. Recomendacion: el set KUST/Canvcle (opcion media) por mejor relacion practicidad/privacidad/precio para un viaje largo."}], links:[{l:"KUST / Canvcle window shades F150 2015-2020 SuperCrew (set 6pzs, ~USD 52-54)", u:"https://www.amazon.com/s?k=snap+shades+ford+f150+supercrew+2015-2020+rear+window"}]},
+ // ---- NOSOTROS ----
+ {cat:"nosotros", name:"Ollas", done:false, notes:[{by:"Claude", tx:"Set anidable de camping (GSI Pinnacle o similar) para ahorrar espacio."}], links:[]},
+ {cat:"nosotros", name:"Vajilla", done:false, notes:[], links:[]},
+ {cat:"nosotros", name:"Sillón inflable", done:false, notes:[], links:[]},
+ {cat:"nosotros", name:"Paddleboard", done:false, notes:[{by:"Claude", tx:"Inflable sí o sí por espacio. Útil en Flathead Lake (MT), Bahía Concepción (Baja) y lagos de Colorado."}], links:[]},
+ {cat:"nosotros", name:"Bolsas de dormir", done:false, notes:[{by:"Claude", tx:"Rango de confort -5/0°C: van a tener noches frías en Glacier/Yellowstone/Colorado en agosto-septiembre."}], links:[]},
+ {cat:"nosotros", name:"Pantalla proyector", done:false, notes:[{by:"Claude", tx:"Proyector portátil 12V/USB-C para cine en el camper."}], links:[]},
+ {cat:"nosotros", name:"Dron", done:false, notes:[{by:"Claude", tx:"Menos de 250g (DJI Mini) para simplificar registro. Ojo: varios parques nacionales de EEUU y México PROHÍBEN drones; revisar reglas por país de la ruta."}], links:[{l:"DJI Mini", u:"https://www.dji.com"}]},
+ {cat:"nosotros", name:"Starlink / internet", done:false, notes:[{by:"Claude", tx:"Starlink Mini + plan Roam para zonas remotas. Complementar con eSIM para ciudades (ver ítem en Trámites). Verificar cobertura Roam en Centroamérica país por país."}], links:[{l:"Starlink Mini", u:"https://www.starlink.com"}]},
+ {cat:"nosotros", name:"Kindle", done:false, notes:[], links:[]},
+ {cat:"nosotros", name:"Computadora", done:false, notes:[], links:[]},
+ {cat:"nosotros", name:"Repelente de mosquitos", done:false, notes:[{by:"Claude", tx:"Con DEET 30%+ o picaridina para Centroamérica (dengue/zika). Llevar stock desde EEUU."}], links:[]},
+ // ---- TRÁMITES ----
+ {cat:"tramites", name:"Tarjeta alternativa", done:false, notes:[{by:"Claude", tx:"Ideal: Charles Schwab (reintegra fees de ATM en todo el mundo) o Wise. Llevar 2-3 tarjetas guardadas en lugares distintos del auto."}], links:[{l:"Wise", u:"https://wise.com"}]},
+ {cat:"tramites", name:"Seguro internacional del auto", done:false, notes:[{by:"Claude", tx:"México: Baja Bound o Sanborns (se contrata online antes de cruzar). Centroamérica: se compra seguro obligatorio en cada frontera, no existe póliza única confiable."}], links:[{l:"Baja Bound", u:"https://www.bajabound.com"},{l:"Sanborns", u:"https://www.sanborns.com"}]},
+ {cat:"tramites", name:"Seguro del viajero", done:false, notes:[{by:"Claude", tx:"Anual multiviaje con cobertura en toda América. Ver SafetyWing (pensado para nómades, se paga mensual) o Assist Card."}], links:[{l:"SafetyWing", u:"https://safetywing.com"}]},
+ {cat:"tramites", name:"Teléfono eSIM", done:false, notes:[{by:"Claude", tx:"Airalo o Holafly con planes regionales para Latam. Complemento de Starlink para ciudades y trámites."}], links:[{l:"Airalo", u:"https://www.airalo.com"}]},
+ {cat:"tramites", name:"Aduana (TIP vehículo)", done:false, notes:[{by:"Claude", tx:"Baja California no requiere TIP; para mainland México sí (Banjercito, online hasta 60 días antes o en el puerto/frontera). Depósito reembolsable según año del vehículo."}], links:[{l:"Banjercito", u:"https://www.banjercito.com.mx"}]},
+ {cat:"tramites", name:"Aerolínea / transporte Samy", done:false, notes:[{by:"Claude", tx:"Para el ferry La Paz: confirmar con Baja Ferries/TMC dónde viaja el perro (algunos exigen kennel en cubierta). Si hay tramo aéreo (ej. Darién), revisar aerolíneas que acepten mascota en cabina/bodega y el peso máximo."}], links:[{l:"Baja Ferries", u:"https://www.bajaferries.com.mx"}]}
+];
+
+/* ================= ESTADO ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBZHqyDLW34ALEmWi4NI6kTt4YSXYDPcRw",
+  authDomain: "f150-9a6e4.firebaseapp.com",
+  projectId: "f150-9a6e4",
+  storageBucket: "f150-9a6e4.firebasestorage.app",
+  messagingSenderId: "974737504661",
+  appId: "1:974737504661:web:abaffde9d112e91654de9c",
+  measurementId: "G-HSCZ8LFQ4E"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Helper para formatear un rango de fechas
+function formatDateRange(startStr, endStr) {
+  if (!startStr) return "Sin fecha";
+  const start = new Date(startStr + 'T00:00:00');
+  if (isNaN(start.getTime())) return "Sin fecha";
+  
+  const months = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const startDay = start.getDate();
+  const startMonth = months[start.getMonth()];
+  
+  if (!endStr || startStr === endStr) {
+    return `${startDay} ${startMonth}`;
+  }
+  
+  const end = new Date(endStr + 'T00:00:00');
+  if (isNaN(end.getTime())) return `${startDay} ${startMonth}`;
+  
+  const endDay = end.getDate();
+  const endMonth = months[end.getMonth()];
+  
+  if (startMonth === endMonth) {
+    return `${startDay}–${endDay} ${startMonth}`;
+  } else {
+    return `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
+  }
+}
+
+// Migración de paradas antiguas si no tienen start/end
+function migrateStops(stops) {
+  let hasChanges = false;
+  const defaultDates = [
+    {s: "2026-08-10", e: "2026-08-10"}, // Chattanooga
+    {s: "2026-08-10", e: "2026-08-13"}, // Ozark NF
+    {s: "2026-08-14", e: "2026-08-15"}, // Monument Rocks
+    {s: "2026-08-16", e: "2026-08-19"}, // Badlands NP
+    {s: "2026-08-16", e: "2026-08-19"}, // Black Hills
+    {s: "2026-08-19", e: "2026-08-19"}, // Devils Tower
+    {s: "2026-08-20", e: "2026-08-20"}, // Bozeman
+    {s: "2026-08-20", e: "2026-08-24"}, // Glacier NP
+    {s: "2026-08-25", e: "2026-08-31"}, // Yellowstone NP
+    {s: "2026-08-25", e: "2026-08-31"}, // Grand Teton
+    {s: "2026-09-01", e: "2026-09-07"}, // Rocky Mountain NP
+    {s: "2026-09-01", e: "2026-09-07"}, // Denver
+    {s: "2026-09-01", e: "2026-09-07"}, // Ouray
+    {s: "2026-09-08", e: "2026-09-14"}, // Moab
+    {s: "2026-09-08", e: "2026-09-14"}, // Capitol Reef
+    {s: "2026-09-08", e: "2026-09-14"}, // Bryce Canyon
+    {s: "2026-09-08", e: "2026-09-14"}, // Zion NP
+    {s: "2026-09-15", e: "2026-09-15"}, // Las Vegas
+    {s: "2026-09-15", e: "2026-09-17"}, // Sequoia NP
+    {s: "2026-09-18", e: "2026-09-20"}, // Yosemite NP
+    {s: "2026-09-21", e: "2026-09-22"}, // San Francisco
+    {s: "2026-09-23", e: "2026-09-24"}, // Big Sur
+    {s: "2026-09-25", e: "2026-09-25"}, // Los Angeles
+    {s: "2026-09-26", e: "2026-09-26"}, // San Diego
+    {s: "2026-09-27", e: "2026-09-27"}, // Nogales
+    {s: "2026-09-27", e: "2026-10-01"}, // Hermosillo
+    {s: "2026-10-02", e: "2026-10-02"}, // Mexicali
+    {s: "2026-10-02", e: "2026-10-03"}, // Ensenada
+    {s: "2026-10-05", e: "2026-10-05"}, // Guerrero Negro
+    {s: "2026-10-06", e: "2026-10-06"}, // San Ignacio
+    {s: "2026-10-07", e: "2026-10-09"}, // Mulege
+    {s: "2026-10-10", e: "2026-10-10"}, // Loreto
+    {s: "2026-10-11", e: "2026-10-12"}, // La Paz
+    {s: "2026-10-13", e: "2026-10-13"}, // Mazatlan
+  ];
+  stops.forEach((s, idx) => {
+    if (!s.start || !s.end) {
+      hasChanges = true;
+      const d = defaultDates[idx] || { s: "2026-08-10", e: "2026-08-10" };
+      s.start = s.start || d.s;
+      s.end = s.end || d.e;
+    }
+  });
+  return hasChanges;
+}
+
+let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)) };
+
+// Suscribirse a cambios en tiempo real
+db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
+  if (doc.exists) {
+    state = doc.data();
+    const didMigrate = migrateStops(state.stops);
+    if (didMigrate) {
+      save();
+    }
+  } else {
+    // Si es la primera vez y la base de datos está vacía, guardamos los datos por defecto
+    save();
+  }
+  renderAll();
+  
+  if (!window.mapCentered) {
+    window.mapCentered = true;
+    setTimeout(() => {
+      map.fitBounds(state.stops.map(s=>[s.lat,s.lon]), {padding:[30,30]});
+    }, 500);
+  }
+}, e => {
+  console.error("Error escuchando cambios en Firebase:", e);
+  alert("Error de lectura en Firebase: " + e.message + "\n\nRevisa si tu base de datos de Firestore tiene las reglas en 'Modo Prueba'.");
+});
+
+function save(){ 
+  db.collection('mapa_ruta').doc('estado').set(state)
+    .then(() => console.log("Guardado exitoso en Firebase!"))
+    .catch(e => {
+      console.error("Error guardando en Firebase:", e);
+      alert("Error al guardar en la base de datos de Firebase: " + e.message + "\n\nRevisa si configuraste las reglas de Firestore en 'Modo Prueba' (Test Mode) para permitir escrituras.");
+    });
+}
+
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "panamerican_datos.json";
+  a.click();
+}
+function importData(inp){
+  const f = inp.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try { const s = JSON.parse(e.target.result); if(s.stops && s.items){ state = s; save(); renderAll(); alert("Datos importados ✔"); } else alert("Archivo inválido"); }
+    catch(err){ alert("No se pudo leer el archivo"); }
+  };
+  r.readAsText(f);
+  inp.value = "";
+}
+function resetData(){
+  if(confirm("¿Volver al plan original? Se pierden todos tus cambios (paradas y compras).")){
+    state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)) };
+    save(); renderAll();
+  }
+}
+
+/* ================= TABS ================= */
+function showTab(t){
+  document.getElementById("page-map").style.display = t==="map" ? "flex" : "none";
+  document.getElementById("page-shop").style.display = t==="shop" ? "block" : "none";
+  document.getElementById("page-cal").style.display = t==="cal" ? "block" : "none";
+  document.getElementById("tab-map").classList.toggle("active", t==="map");
+  document.getElementById("tab-shop").classList.toggle("active", t==="shop");
+  document.getElementById("tab-cal").classList.toggle("active", t==="cal");
+  if(t==="map") setTimeout(()=>map.invalidateSize(), 60);
+  if(t==="cal") renderCalendar();
+}
+
+/* ================= MAPA ================= */
+const NOMAD_POINTS = [
+  {
+    "name": "Cypress Tree Tunnel",
+    "category": "Mirador",
+    "lat": 38.0938557,
+    "lon": -122.9454895
+  },
+  {
+    "name": "Red Rock Canyon",
+    "category": "Hondonada",
+    "lat": 35.324961099999996,
+    "lon": -117.9506246
+  },
+  {
+    "name": "Horsetail Fall",
+    "category": "Cascada",
+    "lat": 37.729123799999996,
+    "lon": -119.6284757
+  },
+  {
+    "name": "Trona Pinnacles",
+    "category": "Formación natural",
+    "lat": 35.617736,
+    "lon": -117.3681094
+  },
+  {
+    "name": "Crowley Lake",
+    "category": "lago",
+    "lat": 37.603687199999996,
+    "lon": -118.7372922
+  },
+  {
+    "name": "17 Mile Dr",
+    "category": "Punto de interés",
+    "lat": 36.6036989,
+    "lon": -121.9451586
+  },
+  {
+    "name": "Parque nacional de las Secuoyas",
+    "category": "Parque nacional",
+    "lat": 36.4863668,
+    "lon": -118.5657516
+  },
+  {
+    "name": "Valle de la Muerte",
+    "category": "Punto de interés",
+    "lat": 36.5322649,
+    "lon": -116.9325408
+  },
+  {
+    "name": "Artists Palette",
+    "category": "Pico de montaña",
+    "lat": 36.367727599999995,
+    "lon": -116.80338429999999
+  },
+  {
+    "name": "Lago Mono",
+    "category": "lago",
+    "lat": 38.0128316,
+    "lon": -118.97615189999999
+  },
+  {
+    "name": "Sea Ranch",
+    "category": "Punto de interés",
+    "lat": 38.716597799999995,
+    "lon": -123.45638459999999
+  },
+  {
+    "name": "Humboldt-Toiyabe National Forest",
+    "category": "Bosque nacional",
+    "lat": 39.140749899999996,
+    "lon": -117.2071127
+  },
+  {
+    "name": "Turquoise Lake",
+    "category": "lago",
+    "lat": 39.2712542,
+    "lon": -106.3787583
+  },
+  {
+    "name": "Red Rocks Park",
+    "category": "Parque",
+    "lat": 39.6655381,
+    "lon": -105.2052116
+  },
+  {
+    "name": "Lake Powell",
+    "category": "Punto de interés",
+    "lat": 36.938846399999996,
+    "lon": -111.48471669999999
+  },
+  {
+    "name": "Lake Haiyaha",
+    "category": "lago",
+    "lat": 40.3046179,
+    "lon": -105.6621479
+  },
+  {
+    "name": "Blue Lakes",
+    "category": "lago",
+    "lat": 39.385609099999996,
+    "lon": -106.1044355
+  },
+  {
+    "name": "Bentonite Hills",
+    "category": "Zona de senderismo",
+    "lat": 38.3600928,
+    "lon": -111.1282937
+  },
+  {
+    "name": "Moonscape Overlook",
+    "category": "Atracción turística",
+    "lat": 38.4501944,
+    "lon": -110.83908609999999
+  },
+  {
+    "name": "Willard Bay State Park",
+    "category": "Parque estatal",
+    "lat": 41.3976956,
+    "lon": -112.100836
+  },
+  {
+    "name": "Flaming Gorge National Recreation Area",
+    "category": "Bosque nacional",
+    "lat": 41.0761219,
+    "lon": -109.54490779999999
+  },
+  {
+    "name": "Devils Tower",
+    "category": "Punto de interés",
+    "lat": 44.5886461,
+    "lon": -104.69854559999999
+  },
+  {
+    "name": "Parque nacional de Yellowstone",
+    "category": "Parque nacional",
+    "lat": 44.597918199999995,
+    "lon": -110.56124899999999
+  },
+  {
+    "name": "Lago McDonald",
+    "category": "lago",
+    "lat": 48.5831721,
+    "lon": -113.92557359999999
+  },
+  {
+    "name": "Kintla Lake Head Campground",
+    "category": "Camping",
+    "lat": 48.975904299999996,
+    "lon": -114.254044
+  },
+  {
+    "name": "Lago Kintla",
+    "category": "lago",
+    "lat": 48.9539573,
+    "lon": -114.31930469999999
+  },
+  {
+    "name": "Upper Missouri River Breaks National Monument",
+    "category": "Reserva nacional",
+    "lat": 47.804573999999995,
+    "lon": -109.0548532
+  },
+  {
+    "name": "Fort Peck Indian Reservation",
+    "category": "Punto de interés",
+    "lat": 48.427244099999996,
+    "lon": -105.4422151
+  },
+  {
+    "name": "Oahe Downstream Recreation Area",
+    "category": "Parque estatal",
+    "lat": 44.4369984,
+    "lon": -100.39978029999999
+  },
+  {
+    "name": "Parque Nacional Badlands",
+    "category": "Parque nacional",
+    "lat": 43.8553804,
+    "lon": -102.33969119999999
+  },
+  {
+    "name": "Calamus Reservoir State Recreation Area and Wildlife Management Area",
+    "category": "Parque",
+    "lat": 41.8401098,
+    "lon": -99.2052381
+  },
+  {
+    "name": "Toadstool Geologic Park",
+    "category": "Parque",
+    "lat": 42.857667199999995,
+    "lon": -103.5839159
+  },
+  {
+    "name": "Bourbon State Fishing Lake",
+    "category": "Parque estatal",
+    "lat": 37.789474299999995,
+    "lon": -95.0716162
+  },
+  {
+    "name": "Chase State Fishing Lake",
+    "category": "Lago de pesca",
+    "lat": 38.3671265,
+    "lon": -96.58768169999999
+  },
+  {
+    "name": "Lake Eufaula State Park",
+    "category": "Parque estatal",
+    "lat": 35.4000907,
+    "lon": -95.60518789999999
+  },
+  {
+    "name": "Bosque Nacional Ozark",
+    "category": "Bosque nacional",
+    "lat": 35.6800723,
+    "lon": -93.24835399999999
+  },
+  {
+    "name": "Chuck Dixon 4-H Park, Lake County",
+    "category": "Parque",
+    "lat": 47.7584527,
+    "lon": -114.1557672
+  },
+  {
+    "name": "Parque Nacional de los Glaciares",
+    "category": "Parque nacional",
+    "lat": 48.756063,
+    "lon": -113.77973159999999
+  },
+  {
+    "name": "Kootenai National Forest",
+    "category": "Bosque nacional",
+    "lat": 48.547258899999996,
+    "lon": -115.3805378
+  }
+];
+
+const COLORS = {1:"#2e7d32",2:"#8d6e63",3:"#f9a825",4:"#1565c0",5:"#6a1b9a",6:"#c62828",7:"#e65100",8:"#00838f",9:"#4e342e",10:"#ad1457",11:"#37474f"};
+const map = L.map("map").setView([37.5,-105], 4);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {attribution:"&copy; OpenStreetMap", maxZoom:18}).addTo(map);
+let layer = L.layerGroup().addTo(map);
+// Dos capas independientes: círculos y etiquetas de Vida Nómada
+let poiCircleLayer = L.layerGroup().addTo(map);
+let poiLabelLayer  = L.layerGroup(); // etiquetas ocultas por defecto
+// Capa de etiquetas de las paradas del viaje (oculta por defecto)
+let stopLabelLayer = L.layerGroup();
+let markers = [];
+
+// Emoji por categoría de POI
+const CAT_ICON = {
+  'lago': '🏞️', 'Cascada': '💧', 'Parque nacional': '🏕️', 'Parque': '🌳',
+  'Parque estatal': '🏕️', 'Bosque nacional': '🌲', 'Reserva nacional': '🏔️',
+  'Camping': '⛺', 'Mirador': '👁️', 'Hondonada': '🏜️', 'Formación natural': '🪨',
+  'Atracción turística': '📸', 'Zona de senderismo': '🥾', 'Lago de pesca': '🎣',
+  'Pico de montaña': '⛰️'
+};
+function poiIcon(cat) { return CAT_ICON[cat] || '📍'; }
+
+function renderPoiLayer() {
+  poiCircleLayer.clearLayers();
+  poiLabelLayer.clearLayers();
+  NOMAD_POINTS.forEach(p => {
+    // — Círculo del punto —
+    const m = L.circleMarker([p.lat, p.lon], {
+      radius: 7,
+      fillColor: '#ff5722',
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 0.95
+    }).addTo(poiCircleLayer);
+    m.bindPopup(
+      "<b>" + esc(p.name) + "</b><br>" +
+      poiIcon(p.category) + " <b style='color:#ff5722'>" + esc(p.category) + "</b>" +
+      "<div class='popup-btns'>" +
+      "<a class='nav-btn' target='_blank' href='https://www.google.com/maps/dir/?api=1&destination=" + p.lat + "," + p.lon + "'>🧭 Navegar</a>" +
+      "</div>"
+    );
+    // — Etiqueta chip (DivIcon marker independiente) —
+    const lblIcon = L.divIcon({
+      className: '',
+      html: '<div class="lbl-chip-poi">' + poiIcon(p.category) + ' ' + esc(p.name) + '</div>',
+      iconAnchor: [-11, 8]
+    });
+    L.marker([p.lat, p.lon], { icon: lblIcon, interactive: false, keyboard: false })
+      .addTo(poiLabelLayer);
+  });
+}
+
+function togglePoiCircles(visible) {
+  if (visible) { if (!map.hasLayer(poiCircleLayer)) poiCircleLayer.addTo(map); }
+  else         { if (map.hasLayer(poiCircleLayer))  map.removeLayer(poiCircleLayer); }
+}
+function togglePoiLabels(visible) {
+  if (visible) { if (!map.hasLayer(poiLabelLayer)) poiLabelLayer.addTo(map); }
+  else         { if (map.hasLayer(poiLabelLayer))  map.removeLayer(poiLabelLayer); }
+}
+function toggleStopLabels(visible) {
+  if (visible) { if (!map.hasLayer(stopLabelLayer)) stopLabelLayer.addTo(map); }
+  else         { if (map.hasLayer(stopLabelLayer))  map.removeLayer(stopLabelLayer); }
+}
+
+renderPoiLayer();
+let addMode = false;
+
+function color(s){ return COLORS[s.b] || "#546e7a"; }
+
+function renderMap(){
+  layer.clearLayers(); stopLabelLayer.clearLayers(); markers = [];
+  const path = state.stops.map(s=>[s.lat, s.lon]);
+  if(path.length > 1) L.polyline(path, {color:"#444", weight:3, opacity:.7, dashArray:"6 6"}).addTo(layer);
+  state.stops.forEach((s,i)=>{
+    const col = color(s);
+    const m = L.circleMarker([s.lat, s.lon], {radius:9, fillColor:col, color:'#fff', weight:2.5, fillOpacity:1}).addTo(layer);
+    // Etiqueta chip premium con número de parada y color del bloque (capa independiente, togglable)
+    const chipHtml = '<div class="lbl-chip-stop" style="border-left-color:' + col + '">'
+      + '<span class="lbl-badge" style="background:' + col + '">' + (i+1) + '</span>'
+      + esc(s.n)
+      + '</div>';
+    const lblIcon = L.divIcon({
+      className: '',
+      html: chipHtml,
+      iconAnchor: [-11, 8]
+    });
+    L.marker([s.lat, s.lon], { icon: lblIcon, interactive: false, keyboard: false })
+      .addTo(stopLabelLayer);
+    m.bindPopup(
+      "<b>"+esc(s.n)+"</b><br>📅 <b style='color:#e65100'>"+esc(formatDateRange(s.start, s.end))+"</b>"+
+      (s.note ? "<br><span style='color:#555'>"+esc(s.note)+"</span>" : "")+
+      "<div class='popup-btns'>"+
+      "<a class='nav-btn' target='_blank' href='https://www.google.com/maps/dir/?api=1&destination="+s.lat+","+s.lon+"'>🧭 Navegar</a>"+
+      "<button class='edit-btn' onclick='editStop("+i+")'>✏️ Editar</button>"+
+      "<button class='del-btn' onclick='delStop("+i+")'>🗑️</button>"+
+      "</div>"
+    );
+    markers.push(m);
+  });
+  renderList();
+}
+
+function renderList(){
+  const el = document.getElementById("stop-list");
+  el.innerHTML = "";
+  state.stops.forEach((s,i)=>{
+    const row = document.createElement("div");
+    row.className = "stop-row";
+    row.innerHTML = "<span class='stop-dot' style='background:"+color(s)+"'></span>"+
+      "<div class='stop-info'><div class='stop-name'>"+(i+1)+". "+esc(s.n)+"</div><div class='stop-date'>"+esc(formatDateRange(s.start, s.end))+"</div></div>"+
+      "<button class='mini' title='Subir' onclick='event.stopPropagation();moveStop("+i+",-1)'>▲</button>"+
+      "<button class='mini' title='Bajar' onclick='event.stopPropagation();moveStop("+i+",1)'>▼</button>";
+    row.onclick = ()=>{ map.flyTo([s.lat,s.lon], 8); markers[i].openPopup(); };
+    el.appendChild(row);
+  });
+}
+
+function moveStop(i,d){
+  const j = i+d; if(j<0 || j>=state.stops.length) return;
+  [state.stops[i], state.stops[j]] = [state.stops[j], state.stops[i]];
+  save(); renderMap();
+}
+function delStop(i){
+  if(confirm("¿Borrar \""+state.stops[i].n+"\"?")){ state.stops.splice(i,1); save(); renderMap(); }
+}
+
+/* --- modal parada --- */
+let editIdx = null; // null = nueva
+function armAdd(){
+  addMode = !addMode;
+  const b = document.getElementById("btn-add");
+  b.classList.toggle("arm", addMode);
+  b.textContent = addMode ? "Tocá el mapa donde va la parada… (o cancelá acá)" : "＋ Agregar parada (luego tocá el mapa)";
+}
+map.on("click", e=>{
+  if(!addMode) return;
+  armAdd();
+  openModal(null, e.latlng.lat, e.latlng.lng);
+});
+function editStop(i){ openModal(i); }
+function openModal(i, lat, lon){
+  editIdx = i;
+  const isNew = i===null || i===undefined;
+  document.getElementById("m-title").textContent = isNew ? "Nueva parada" : "Editar parada";
+  
+  let defStart = "";
+  let defEnd = "";
+  if (isNew && state.stops.length > 0) {
+    const lastStop = state.stops[state.stops.length - 1];
+    if (lastStop.end) {
+      const d = new Date(lastStop.end + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      defStart = d.toISOString().split('T')[0];
+      defEnd = defStart;
+    }
+  }
+
+  const s = isNew ? {n:"", start:defStart, end:defEnd, note:"", lat:lat, lon:lon} : state.stops[i];
+  document.getElementById("m-name").value = s.n;
+  document.getElementById("m-start").value = s.start || "";
+  document.getElementById("m-end").value = s.end || "";
+  document.getElementById("m-note").value = s.note || "";
+  document.getElementById("m-lat").value = s.lat.toFixed ? s.lat.toFixed(5) : s.lat;
+  document.getElementById("m-lon").value = s.lon.toFixed ? s.lon.toFixed(5) : s.lon;
+  const sel = document.getElementById("m-pos");
+  const lbl = document.getElementById("m-pos-lbl");
+  if(isNew){
+    sel.style.display = "block"; lbl.style.display = "block";
+    sel.innerHTML = "<option value='-1'>— Al principio —</option>" + state.stops.map((st,k)=>"<option value='"+k+"'"+(k===state.stops.length-1?" selected":"")+">"+(k+1)+". "+esc(st.n)+"</option>").join("");
+    // preseleccionar la parada más cercana
+    let best = 0, bd = 1e9;
+    state.stops.forEach((st,k)=>{ const d = Math.hypot(st.lat-lat, st.lon-lon); if(d<bd){bd=d; best=k;} });
+    sel.value = best;
+  } else { sel.style.display = "none"; lbl.style.display = "none"; }
+  document.getElementById("modal-bg").style.display = "flex";
+}
+function closeModal(){ document.getElementById("modal-bg").style.display = "none"; }
+function saveModal(){
+  const n = document.getElementById("m-name").value.trim();
+  if(!n){ alert("Poné un nombre"); return; }
+  const startVal = document.getElementById("m-start").value;
+  const endVal = document.getElementById("m-end").value || startVal;
+  const obj = {
+    n: n,
+    start: startVal,
+    end: endVal,
+    note: document.getElementById("m-note").value.trim(),
+    lat: parseFloat(document.getElementById("m-lat").value),
+    lon: parseFloat(document.getElementById("m-lon").value),
+    b: 0
+  };
+  if(editIdx===null || editIdx===undefined){
+    const pos = parseInt(document.getElementById("m-pos").value);
+    const ref = state.stops[pos] || state.stops[pos+1];
+    obj.b = ref ? ref.b : 0;
+    state.stops.splice(pos+1, 0, obj);
+  } else {
+    obj.b = state.stops[editIdx].b;
+    state.stops[editIdx] = obj;
+  }
+  save(); closeModal(); renderMap();
+}
+
+/* ================= COMPRAS ================= */
+function renderShop(){
+  const wrap = document.getElementById("cats");
+  wrap.innerHTML = "";
+  const total = state.items.length, done = state.items.filter(x=>x.done).length;
+  document.getElementById("prog-txt").textContent = done+" de "+total+" comprados";
+  document.getElementById("prog-bar").style.width = (total? Math.round(done/total*100):0)+"%";
+
+  Object.keys(CATS).forEach(ck=>{
+    const cat = CATS[ck];
+    const div = document.createElement("div");
+    div.className = "cat";
+    div.innerHTML = "<h3 style='background:"+cat.c+"'>"+cat.t+"</h3>";
+    state.items.forEach((it,i)=>{
+      if(it.cat!==ck) return;
+      const d = document.createElement("div");
+      d.className = "item"+(it.done?" done":"");
+      let html = "<div class='item-top'>"+
+        "<input type='checkbox' "+(it.done?"checked":"")+" onchange='toggleItem("+i+")'>"+
+        "<span class='item-name'>"+esc(it.name)+"</span>"+
+        "<span class='item-actions'>"+
+        "<button onclick='addLink("+i+")'>+ link</button>"+
+        "<button onclick='addNote("+i+")'>+ nota</button>"+
+        "<button onclick='renameItem("+i+")'>✏️</button>"+
+        "<button onclick='delItem("+i+")' style='color:#c62828'>🗑️</button>"+
+        "</span></div>";
+      it.notes.forEach((nt,k)=>{
+        html += "<div class='note'><b>"+esc(nt.by)+":</b> "+esc(nt.tx)+"<span class='del-x' onclick='delNote("+i+","+k+")'>×</span></div>";
+      });
+      it.links.forEach((lk,k)=>{
+        html += "<div class='link-row'>🔗 <a href='"+esc(lk.u)+"' target='_blank'>"+esc(lk.l||lk.u)+"</a><span class='del-x' onclick='delLink("+i+","+k+")'>×</span></div>";
+      });
+      d.innerHTML = html;
+      div.appendChild(d);
+    });
+    const add = document.createElement("div");
+    add.className = "add-item";
+    add.innerHTML = "<input placeholder='Agregar ítem a "+cat.t.replace(/^[^ ]+ /,"")+"…' onkeydown='if(event.key===\"Enter\")addItem(\""+ck+"\",this)'><button onclick='addItem(\""+ck+"\", this.previousElementSibling)'>＋</button>";
+    div.appendChild(add);
+    wrap.appendChild(div);
+  });
+}
+function toggleItem(i){ state.items[i].done = !state.items[i].done; save(); renderShop(); }
+function addItem(cat, inp){
+  const v = inp.value.trim(); if(!v) return;
+  state.items.push({cat:cat, name:v, done:false, notes:[], links:[]});
+  save(); renderShop();
+}
+function renameItem(i){
+  const v = prompt("Nombre del ítem:", state.items[i].name);
+  if(v && v.trim()){ state.items[i].name = v.trim(); save(); renderShop(); }
+}
+function delItem(i){
+  if(confirm("¿Borrar \""+state.items[i].name+"\"?")){ state.items.splice(i,1); save(); renderShop(); }
+}
+function addLink(i){
+  const u = prompt("Pegá el link (URL):"); if(!u || !u.trim()) return;
+  const l = prompt("Nombre para mostrar (opcional):") || u.trim();
+  state.items[i].links.push({l:l.trim(), u:u.trim()});
+  save(); renderShop();
+}
+function delLink(i,k){ state.items[i].links.splice(k,1); save(); renderShop(); }
+function addNote(i){
+  const by = prompt("¿Quién escribe la nota? (ej: Martín, Lula, Claude)", "Martín"); if(by===null) return;
+  const tx = prompt("Nota / recomendación:"); if(!tx || !tx.trim()) return;
+  state.items[i].notes.push({by:(by.trim()||"Nota"), tx:tx.trim()});
+  save(); renderShop();
+}
+function delNote(i,k){ state.items[i].notes.splice(k,1); save(); renderShop(); }
+
+/* ================= UTIL ================= */
+function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+
+function renderAll(){ renderMap(); renderShop(); if (document.getElementById("page-cal").style.display !== "none") renderCalendar(); }
+
+/* ================= CALENDARIO (GANTT) ================= */
+let calSelectedIdx = -1;
+
+function renderCalendar() {
+  const container = document.getElementById("page-cal");
+  if (!container) return;
+
+  const stops = state.stops;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayStr = today.toISOString().split('T')[0];
+
+  // — Stats —
+  const stopsWithDates = stops.filter(s => s.start && s.end);
+  const totalDuration = stopsWithDates.reduce((acc, s) => {
+    const d1 = new Date(s.start + 'T00:00:00'), d2 = new Date(s.end + 'T00:00:00');
+    return acc + Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
+  }, 0);
+  const allStarts = stopsWithDates.map(s => new Date(s.start + 'T00:00:00'));
+  const allEnds   = stopsWithDates.map(s => new Date(s.end   + 'T00:00:00'));
+  let globalMin = allStarts.length ? new Date(Math.min(...allStarts)) : new Date('2026-08-10T00:00:00');
+  let globalMax = allEnds.length   ? new Date(Math.max(...allEnds))   : new Date('2026-10-15T00:00:00');
+  const tripDays = Math.round((globalMax - globalMin) / 86400000) + 1;
+
+  // — Day list —
+  const padMin = new Date(globalMin); padMin.setDate(padMin.getDate() - 1);
+  const padMax = new Date(globalMax); padMax.setDate(padMax.getDate() + 3);
+  const dayList = [];
+  let cur = new Date(padMin);
+  while (cur <= padMax) { dayList.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
+
+  const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const fullMonths = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const days  = ["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
+
+  // — Build month spans —
+  const monthSpans = [];
+  let lastM = -1;
+  dayList.forEach((d, i) => {
+    const m = d.getMonth();
+    if (m !== lastM) { monthSpans.push({ name: fullMonths[m], start: i, span: 1 }); lastM = m; }
+    else monthSpans[monthSpans.length-1].span++;
+  });
+
+  // — Build stop index maps —
+  const stopDayMap = stops.map(s => {
+    let si = -1, ei = -1;
+    if (s.start && s.end) {
+      dayList.forEach((d, i) => {
+        const ds = d.toISOString().split('T')[0];
+        if (ds === s.start) si = i;
+        if (ds === s.end)   ei = i;
+      });
+    }
+    return { si, ei };
+  });
+
+  // ── Stats bar ─────────────────────────────────────────
+  let html = `<div class="cal-stats">
+    <div class="cal-stat-card"><div class="val">${stops.length}</div><div class="lbl">Destinos</div></div>
+    <div class="cal-stat-card"><div class="val">${tripDays}</div><div class="lbl">Días de viaje</div></div>
+    <div class="cal-stat-card"><div class="val">${months[globalMin.getMonth()]}&nbsp;→&nbsp;${months[globalMax.getMonth()]}</div><div class="lbl">Período</div></div>
+    <div class="cal-stat-card"><div class="val">${stopsWithDates.length}</div><div class="lbl">Con fechas</div></div>
+  </div>`;
+
+  // ── Layout ────────────────────────────────────────────
+  html += `<div class="cal-layout">`;
+
+  // ── Gantt table ───────────────────────────────────────
+  html += `<div class="gantt-wrapper"><table class="gantt-table">`;
+
+  // Month row
+  html += `<thead><tr style="background:#12151c; height:36px; border-bottom:1px solid #23272f;">`;
+  html += `<th style="position:sticky;left:0;background:#12151c;z-index:11;min-width:220px;max-width:220px;padding:0 16px;text-align:left;border-right:2px solid #2a2f3d;color:#f8fafc;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">Parada</th>`;
+  monthSpans.forEach(ms => {
+    html += `<th colspan="${ms.span}" style="border-right:1px solid #23272f;text-align:center;color:#e8c14b;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:8px 4px;">${ms.name}</th>`;
+  });
+  html += `</tr>`;
+
+  // Day row
+  html += `<tr style="background:#0e1016;height:30px;border-bottom:2px solid #23272f;">`;
+  html += `<th style="position:sticky;left:0;background:#0e1016;z-index:11;border-right:2px solid #2a2f3d;"></th>`;
+  dayList.forEach(d => {
+    const isTod = d.toISOString().split('T')[0] === todayStr;
+    const isWE  = d.getDay()===0 || d.getDay()===6;
+    const bg = isTod ? 'background:#e8c14b22;' : isWE ? 'background:#13151c;' : '';
+    const col = isTod ? 'color:#e8c14b;font-weight:900;' : isWE ? 'color:#4a5568;' : 'color:#606878;';
+    html += `<th style="border-right:1px solid #1a1d24;min-width:30px;width:30px;text-align:center;font-size:10px;font-weight:700;padding:4px 2px;${bg}${col}" title="${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}">${d.getDate()}</th>`;
+  });
+  html += `</tr></thead>`;
+
+  // Body rows
+  html += `<tbody>`;
+  stops.forEach((s, idx) => {
+    const { si, ei } = stopDayMap[idx];
+    const isSel = idx === calSelectedIdx;
+    const rowBg = isSel ? 'background:rgba(232,193,75,0.07);' : '';
+    const cVal = color(s);
+    const dur  = (si !== -1 && ei !== -1) ? (ei - si + 1) : 0;
+
+    html += `<tr class="gantt-row" style="border-bottom:1px solid #161920;height:44px;${rowBg}transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='${isSel?'rgba(232,193,75,0.07)':'transparent'}'">`;
+    
+    // Label cell
+    html += `<td onclick="calSelectStop(${idx})" style="position:sticky;left:0;z-index:10;background:${isSel?'#16181f':'#101216'};min-width:220px;max-width:220px;padding:0 14px;border-right:2px solid #2a2f3d;cursor:pointer;transition:background .12s;">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;height:44px;">`;
+    html += `<span style="width:8px;height:8px;border-radius:50%;background:${cVal};flex-shrink:0;box-shadow:0 0 6px ${cVal}55;"></span>`;
+    html += `<div style="min-width:0;"><div style="font-size:12px;font-weight:${isSel?'800':'600'};color:${isSel?'#e8c14b':'#e2e8f0'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${idx+1}. ${s.n}</div>`;
+    if (dur > 0) html += `<div style="font-size:10px;color:#5a6476;margin-top:1px;">${formatDateRange(s.start,s.end)} · ${dur}d</div>`;
+    html += `</div></div></td>`;
+
+    // Day cells
+    dayList.forEach((d, dIdx) => {
+      const dStr  = d.toISOString().split('T')[0];
+      const isTod = dStr === todayStr;
+      const isWE  = d.getDay()===0||d.getDay()===6;
+      const inBar = si !== -1 && ei !== -1 && dIdx >= si && dIdx <= ei;
+      const isS   = dIdx === si;
+      const isE   = dIdx === ei;
+
+      let cellBg = isTod ? 'background:#e8c14b10;' : isWE ? 'background:#0f1116;' : '';
+      let todayLine = isTod ? `<div style="position:absolute;top:0;bottom:0;left:50%;width:1.5px;background:#e8c14b55;pointer-events:none;"></div>` : '';
+
+      let barHtml = '';
+      if (inBar) {
+        const br = isS && isE ? '8px' : isS ? '8px 0 0 8px' : isE ? '0 8px 8px 0' : '0';
+        barHtml = `<div class="gantt-bar" onclick="calSelectStop(${idx})" style="border-radius:${br};background:linear-gradient(135deg,${cVal}ee,${cVal}aa);box-shadow:0 2px 8px ${cVal}44;" title="${s.n}\n${formatDateRange(s.start,s.end)} (${dur}d)">`;
+        if (isS) barHtml += `<span>${s.n.split('—')[0].split('/')[0].split(',')[0].trim()}</span>`;
+        barHtml += `</div>`;
+      }
+
+      html += `<td style="border-right:1px solid #161920;padding:2px 0;position:relative;${cellBg}">${todayLine}${barHtml}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>`; // gantt-wrapper
+
+  // ── Detail panel ─────────────────────────────────────
+  const det = calSelectedIdx >= 0 ? stops[calSelectedIdx] : null;
+  html += `<div class="cal-detail${det ? '' : ' hidden'}" id="cal-detail">`;
+  if (det) {
+    const { si, ei } = stopDayMap[calSelectedIdx];
+    const dur = (si !== -1 && ei !== -1) ? (ei - si + 1) : 0;
+    const cVal = color(det);
+    html += `<div style="height:5px;background:linear-gradient(90deg,${cVal},${cVal}77);"></div>`;
+    html += `<div class="cal-detail-header">`;
+    html += `<div class="det-num">Parada ${calSelectedIdx+1} de ${stops.length}</div>`;
+    html += `<div class="det-name">${det.n}</div>`;
+    html += `</div>`;
+    html += `<div class="cal-detail-body">`;
+    if (det.start) {
+      html += `<div class="cal-detail-row"><span class="det-icon">📅</span><div class="det-text"><strong>Período</strong>${formatDateRange(det.start, det.end)}${dur>0?' · '+dur+' día'+(dur>1?'s':''):''}</div></div>`;
+    } else {
+      html += `<div class="cal-detail-row"><span class="det-icon">📅</span><div class="det-text" style="color:#5a6476;">Sin fechas — editar parada para asignar</div></div>`;
+    }
+    if (det.note) {
+      html += `<div class="cal-detail-row"><span class="det-icon">📝</span><div class="det-text"><strong>Nota</strong>${det.note}</div></div>`;
+    }
+    html += `<div class="cal-detail-row"><span class="det-icon">📍</span><div class="det-text"><strong>Coordenadas</strong>${det.lat.toFixed(4)}, ${det.lon.toFixed(4)}</div></div>`;
+    html += `</div>`;
+    html += `<div class="cal-detail-foot">`;
+    html += `<button class="det-btn-map" onclick="focusStopOnMap(${calSelectedIdx})">🗺️ Ver en mapa</button>`;
+    html += `<button class="det-btn-edit" onclick="editStop(${calSelectedIdx});showTab('map');">✏️ Editar</button>`;
+    html += `</div>`;
+  } else {
+    html += `<div style="padding:40px 20px;text-align:center;color:#3d4455;">`;
+    html += `<div style="font-size:32px;margin-bottom:12px;">👆</div>`;
+    html += `<div style="font-size:13px;font-weight:600;color:#4a5568;">Clic en una parada<br>para ver detalles</div>`;
+    html += `</div>`;
+  }
+  html += `</div>`; // cal-detail
+
+  html += `</div>`; // cal-layout
+  container.innerHTML = html;
+}
+
+function calSelectStop(idx) {
+  calSelectedIdx = (calSelectedIdx === idx) ? -1 : idx;
+  renderCalendar();
+}
+
+function focusStopOnMap(idx) {
+  showTab('map');
+  const s = state.stops[idx];
+  if (s) {
+    map.flyTo([s.lat, s.lon], 8);
+    setTimeout(() => {
+      markers[idx].openPopup();
+    }, 400);
+  }
+}
+
+// Controlar pestaña visible por medio del hash de la URL (#mapa, #compras o #calendario)
+function checkHashTab() {
+  const h = window.location.hash;
+  if (h === '#compras' || h === '#shop') {
+    showTab('shop');
+  } else if (h === '#cal' || h === '#calendario' || h === '#calendar') {
+    showTab('cal');
+  } else {
+    showTab('map');
+  }
+}
+window.addEventListener('hashchange', checkHashTab);
+checkHashTab(); // Ejecutar inmediatamente al cargar la página
+</script>
+</body>
+</html>
