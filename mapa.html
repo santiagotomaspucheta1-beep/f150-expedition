@@ -574,8 +574,11 @@ function migrateStops(stops) {
   return hasChanges;
 }
 
-function migrateItems(items) {
+function migrateItems(state) {
+  if (state.itemsVersion >= 1) return false;
+  
   let hasChanges = false;
+  const items = state.items || [];
   const defaultObj = {};
   DEFAULT_ITEMS.forEach(di => { defaultObj[di.name] = di; });
 
@@ -610,10 +613,12 @@ function migrateItems(items) {
     }
   });
 
-  return hasChanges;
+  state.items = items;
+  state.itemsVersion = 1;
+  return true; // Force save to persist version 1
 }
 
-let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)) };
+let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 1 };
 
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
@@ -621,7 +626,7 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
     state = doc.data();
     if (!state.items) state.items = [];
     const didMigrateStops = migrateStops(state.stops);
-    const didMigrateItems = migrateItems(state.items);
+    const didMigrateItems = migrateItems(state);
     if (didMigrateStops || didMigrateItems) {
       save();
     }
