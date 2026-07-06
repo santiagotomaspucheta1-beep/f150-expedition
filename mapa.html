@@ -31,6 +31,8 @@
   .stop-info { flex:1; min-width:0; }
   .stop-name { font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .stop-date { font-size:11px; color:#e65100; font-weight:600; }
+  .leg-info { font-size:11px; color:#78909c; padding:2px 6px 6px 22px; display:flex; align-items:center; gap:4px; }
+  .leg-info b { color:#455a64; font-weight:700; }
   .mini { background:#eceff1; border:none; border-radius:5px; cursor:pointer; font-size:11px; padding:2px 5px; }
   .add-stop-btn { width:100%; margin:8px 0; padding:9px; background:#2e7d32; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; }
   .add-stop-btn.arm { background:#c62828; }
@@ -340,6 +342,7 @@
   <div id="page-map">
     <div id="sidebar">
       <h2>Paradas (en orden de viaje)</h2>
+      <div id="trip-summary" style="font-size:11.5px;color:#607d8b;font-weight:600;margin:-4px 0 8px;"></div>
       <button class="add-stop-btn" id="btn-add" onclick="armAdd()">＋ Agregar parada (luego tocá el mapa)</button>
       
       <!-- Controles de capa Paradas -->
@@ -522,6 +525,32 @@ function formatDateRange(startStr, endStr) {
   } else {
     return `${startDay} ${startMonth} – ${endDay} ${endMonth}`;
   }
+}
+
+// Distancia entre dos puntos (línea recta, fórmula de Haversine)
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+// Factor para aproximar distancia real de ruta a partir de la línea recta,
+// y velocidad promedio estimada para una camioneta con camper en rutas de EEUU/México.
+const ROAD_FACTOR = 1.3;
+const AVG_SPEED_KMH = 80;
+function legEstimate(a, b) {
+  const straightKm = haversineKm(a.lat, a.lon, b.lat, b.lon);
+  const km = straightKm * ROAD_FACTOR;
+  return { km, hours: km / AVG_SPEED_KMH };
+}
+function formatDuration(hours) {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  if (h === 0) return m + " min";
+  if (m === 0) return h + "h";
+  return h + "h " + m + "min";
 }
 
 // Migración de paradas antiguas si no tienen start/end
@@ -1035,6 +1064,7 @@ function renderMap(){
 function renderList(){
   const el = document.getElementById("stop-list");
   el.innerHTML = "";
+  let totalKm = 0, totalHours = 0;
   state.stops.forEach((s,i)=>{
     const row = document.createElement("div");
     row.className = "stop-row";
@@ -1044,7 +1074,23 @@ function renderList(){
       "<button class='mini' title='Bajar' onclick='event.stopPropagation();moveStop("+i+",1)'>▼</button>";
     row.onclick = ()=>{ map.flyTo([s.lat,s.lon], 8); markers[i].openPopup(); };
     el.appendChild(row);
+
+    const next = state.stops[i + 1];
+    if (next) {
+      const leg = legEstimate(s, next);
+      totalKm += leg.km; totalHours += leg.hours;
+      const legEl = document.createElement("div");
+      legEl.className = "leg-info";
+      legEl.innerHTML = "🚗 <b>" + Math.round(leg.km) + " km</b> · ~" + formatDuration(leg.hours) + " de manejo";
+      el.appendChild(legEl);
+    }
   });
+  const summaryEl = document.getElementById("trip-summary");
+  if (summaryEl) {
+    summaryEl.textContent = state.stops.length > 1
+      ? "Total ruta: ~" + Math.round(totalKm).toLocaleString('es-AR') + " km · ~" + formatDuration(totalHours) + " de manejo"
+      : "";
+  }
 }
 
 function moveStop(i,d){

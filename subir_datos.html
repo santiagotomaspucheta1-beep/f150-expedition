@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Subir datos actualizados — Panamerican Expedition</title>
+<script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore-compat.js"></script>
+<style>
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; color: #222; }
+  h1 { font-size: 20px; }
+  button { font-size: 16px; padding: 14px 22px; background: #1565c0; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 16px; }
+  button:disabled { background: #999; cursor: default; }
+  #status { margin-top: 20px; padding: 14px; border-radius: 8px; font-size: 15px; white-space: pre-wrap; }
+  .ok { background: #e6f4ea; color: #1e7e34; }
+  .err { background: #fdecea; color: #b3261e; }
+  .info { background: #eef2f7; color: #333; }
+  code { background: #f0f0f0; padding: 2px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h1>🚙 Subir compras/trámites actualizados a Firebase</h1>
+  <p>Este archivo sube los cambios de las categorías <b>Auto</b> y <b>Trámites</b> (notas, links y 2 ítems nuevos) directamente a la base de datos que usa <code>f150-expedition.vercel.app</code>. No borra ni pisa nada de Samy, Nosotros, tus ítems agregados a mano (Wok, Pastilla antipulgas) ni el estado de "comprado" que ya tenías marcado — se hizo un merge completo antes de generar este archivo.</p>
+  <p>Solo tenés que apretar el botón. Después abrí la página del mapa normalmente y va a estar todo actualizado.</p>
+  <button id="btn" onclick="subir()">Subir a Firebase</button>
+  <div id="status" class="info" style="display:none"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBZHqyDLW34ALEmWi4NI6kTt4YSXYDPcRw",
+  authDomain: "f150-9a6e4.firebaseapp.com",
+  projectId: "f150-9a6e4",
+  storageBucket: "f150-9a6e4.firebasestorage.app",
+  messagingSenderId: "974737504661",
+  appId: "1:974737504661:web:abaffde9d112e91654de9c",
+  measurementId: "G-HSCZ8LFQ4E"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const MERGED_STATE = {
+  "stops": [
+    {
+      "start": "2026-08-10",
+      "b": 1,
+      "lon": -85.3097,
+      "end": "2026-08-10",
+      "f": "10 ago",
+      "note": "Punto de partida. Test final de equipo.",
+      "lat": 35.0456,
+      "n": "Chattanooga, TN — SALIDA"
+    },
+    {
+      "n": "Ozark NF / Buffalo River, AR",
+      "lat": 36.02,
+      "end": "2026-08-13",
+      "note": "Primer test del camper, ríos y sombra para Samy.",
+      "f": "10–13 ago",
+      "b": 1,
+      "lon": -93.36,
+      "start": "2026-08-10"
+    },
+    {
+      "lat": 38.79,
+      "n": "Monument Rocks, KS",
+      "lon": -100.76,
+      "b": 2,
+      "start": "2026-08-14",
+      "end": "2026-08-15",
+      "f": "14–15 ago",
+      "note": "Día de cruce de las Great Plains."
+    },
+    {
+      "n": "Badlands NP, SD",
+      "lat": 43.855,
+      "end": "2026-08-19",
+      "f": "16–19 ago",
+      "note": "Amanecer/atardecer, scenic loop.",
+      "b": 3,
+      "lon": -102.34,
+      "start": "2026-08-16"
+    },
+    {
+      "end": "2026-08-19",
+      "f": "16–19 ago",
+      "note": "Custer SP es dog-friendly.",
+      "b": 3,
+      "lon": -103.45,
+      "start": "2026-08-16",
+      "n": "Black Hills / Custer SP / Rushmore, SD",
+      "lat": 43.76
+    },
+    {
+      "lon": -104.715,
+      "b": 3,
+      "start": "2026-08-19",
+      "f": "19 ago",
+      "end": "2026-08-19",
+      "note": "Parada corta en ruta a Montana.",
+      "lat": 44.59,
+      "n": "Devils Tower, WY"
+    },
+    {
+      "start": "2026-08-20",
+      "b": 4,
+      "lon": -111.043,
+      "f": "20 ago",
+      "end": "2026-08-20",
+      "note": "Abastecimiento, laundry, service.",
+      "lat": 45.677,
+      "n": "Bozeman, MT"
+    },
+    {
+      "n": "Glacier NP, MT",
+      "lat": 48.5,
+      "end": "2026-08-24",
+      "f": "20–24 ago",
+      "note": "Medir dimensiones antes de Going-to-the-Sun Rd.",
+      "b": 4,
+      "lon": -113.99,
+      "start": "2026-08-20"
+    },
+    {
+      "n": "Yellowstone NP, WY",
+      "lat": 44.46,
+      "end": "2026-08-31",
+      "note": "Perros solo en áreas desarrolladas.",
+      "f": "25–31 ago",
+      "lon": -110.83,
+      "b": 5,
+      "start": "2026-08-25"
+    },
+    {
+      "note": "Cierre del bloque norte.",
+      "end": "2026-08-31",
+      "f": "25–31 ago",
+      "start": "2026-08-25",
+      "b": 5,
+      "lon": -110.76,
+      "n": "Grand Teton / Jackson, WY",
+      "lat": 43.48
+    },
+    {
+      "lat": 40.377,
+      "n": "Rocky Mountain NP / Estes Park, CO",
+      "b": 6,
+      "lon": -105.52,
+      "start": "2026-09-01",
+      "end": "2026-09-07",
+      "note": "Trail Ridge Road.",
+      "f": "1–7 sep"
+    },
+    {
+      "n": "Denver, CO",
+      "lat": 39.74,
+      "end": "2026-09-07",
+      "note": "ÚLTIMA gran ciudad para compras y service antes de México.",
+      "f": "1–7 sep",
+      "start": "2026-09-01",
+      "lon": -104.99,
+      "b": 6
+    },
+    {
+      "lat": 38.02,
+      "n": "Ouray / Million Dollar Hwy, CO",
+      "start": "2026-09-01",
+      "lon": -107.67,
+      "b": 6,
+      "note": "US-550, San Juan Mountains.",
+      "end": "2026-09-07",
+      "f": "1–7 sep"
+    },
+    {
+      "lon": -109.55,
+      "b": 7,
+      "start": "2026-09-08",
+      "f": "8–14 sep",
+      "end": "2026-09-14",
+      "note": "Mucho BLM camping.",
+      "lat": 38.61,
+      "n": "Moab — Arches + Canyonlands, UT"
+    },
+    {
+      "b": 7,
+      "lon": -111.26,
+      "start": "2026-09-08",
+      "note": "Scenic Byway 24.",
+      "end": "2026-09-14",
+      "f": "8–14 sep",
+      "lat": 38.29,
+      "n": "Capitol Reef NP, UT"
+    },
+    {
+      "lat": 37.59,
+      "n": "Bryce Canyon NP, UT",
+      "start": "2026-09-08",
+      "lon": -112.19,
+      "b": 7,
+      "f": "8–14 sep",
+      "note": "Rim pavimentado apto con perro.",
+      "end": "2026-09-14"
+    },
+    {
+      "n": "Zion NP, UT",
+      "lat": 37.3,
+      "end": "2026-09-14",
+      "f": "8–14 sep",
+      "note": "Pa'rus Trail admite perros.",
+      "start": "2026-09-08",
+      "b": 7,
+      "lon": -113.03
+    },
+    {
+      "n": "Las Vegas, NV (paso)",
+      "lat": 36.17,
+      "note": "Paso logístico. Evitar Death Valley con Samy (calor).",
+      "f": "15 sep",
+      "end": "2026-09-15",
+      "b": 8,
+      "lon": -115.14,
+      "start": "2026-09-15"
+    },
+    {
+      "lat": 36.49,
+      "n": "Sequoia NP, CA",
+      "lon": -118.57,
+      "b": 8,
+      "start": "2026-09-15",
+      "f": "15–17 sep",
+      "note": "",
+      "end": "2026-09-17"
+    },
+    {
+      "n": "Yosemite NP, CA",
+      "lat": 37.865,
+      "note": "Reservar camping con anticipación.",
+      "f": "18–20 sep",
+      "end": "2026-09-20",
+      "b": 8,
+      "lon": -119.54,
+      "start": "2026-09-18"
+    },
+    {
+      "f": "21–22 sep",
+      "end": "2026-09-22",
+      "note": "Ciudad + Golden Gate.",
+      "start": "2026-09-21",
+      "b": 8,
+      "lon": -122.42,
+      "n": "San Francisco, CA",
+      "lat": 37.77
+    },
+    {
+      "lat": 36.27,
+      "n": "Big Sur / Highway 1, CA",
+      "b": 8,
+      "lon": -121.81,
+      "start": "2026-09-23",
+      "note": "Costa con calma.",
+      "end": "2026-09-24",
+      "f": "23–24 sep"
+    },
+    {
+      "start": "2026-09-25",
+      "b": 8,
+      "lon": -118.24,
+      "note": "Paso / visita corta.",
+      "f": "25 sep",
+      "end": "2026-09-25",
+      "lat": 34.05,
+      "n": "Los Ángeles, CA"
+    },
+    {
+      "lat": 32.72,
+      "n": "San Diego, CA",
+      "b": 8,
+      "lon": -117.16,
+      "start": "2026-09-26",
+      "end": "2026-09-26",
+      "note": "Playas dog-friendly. Último punto costa EEUU.",
+      "f": "26 sep"
+    },
+    {
+      "note": "",
+      "end": "2026-09-27",
+      "f": "2 oct",
+      "lon": -115.47,
+      "b": 10,
+      "start": "2026-09-27",
+      "n": "Mexicali / Tecate — entrada a Baja",
+      "lat": 32.66
+    },
+    {
+      "n": "Ensenada, BC",
+      "lat": 31.87,
+      "note": "",
+      "end": "2026-10-01",
+      "f": "2–3 oct",
+      "start": "2026-09-27",
+      "b": 10,
+      "lon": -116.6
+    },
+    {
+      "f": "5 oct",
+      "note": "Cruce del paralelo 28.",
+      "end": "2026-10-02",
+      "start": "2026-10-02",
+      "b": 10,
+      "lon": -114.06,
+      "n": "Guerrero Negro, BCS",
+      "lat": 27.97
+    },
+    {
+      "lat": 27.28,
+      "n": "San Ignacio, BCS",
+      "b": 10,
+      "lon": -112.9,
+      "start": "2026-10-02",
+      "f": "6 oct",
+      "end": "2026-10-03",
+      "note": "Oasis y misión."
+    },
+    {
+      "start": "2026-10-05",
+      "b": 10,
+      "lon": -111.95,
+      "end": "2026-10-05",
+      "f": "7–9 oct",
+      "note": "Las mejores playas para acampar de Baja.",
+      "lat": 26.85,
+      "n": "Mulegé / Bahía Concepción, BCS"
+    },
+    {
+      "n": "Loreto, BCS",
+      "lat": 26.01,
+      "end": "2026-10-06",
+      "note": "Pueblo mágico.",
+      "f": "10 oct",
+      "lon": -111.35,
+      "b": 10,
+      "start": "2026-10-06"
+    },
+    {
+      "lon": -110.31,
+      "b": 11,
+      "start": "2026-10-07",
+      "f": "11–12 oct",
+      "end": "2026-10-09",
+      "note": "Ferry a Mazatlán o Topolobampo. Confirmar reglas perro + TIP.",
+      "lat": 24.14,
+      "n": "La Paz, BCS — FERRY"
+    },
+    {
+      "lat": 23.25,
+      "n": "Mazatlán, Sin. (destino tentativo)",
+      "start": "2026-10-10",
+      "b": 11,
+      "lon": -106.41,
+      "f": "~13 oct",
+      "end": "2026-10-10",
+      "note": "Continúa hacia México central y Centroamérica…"
+    },
+    {
+      "b": 9,
+      "lon": -110.98663,
+      "start": "2026-10-11",
+      "end": "2026-10-12",
+      "f": "",
+      "note": "",
+      "lat": 29.09458,
+      "n": "Hermosillo"
+    }
+  ],
+  "items": [
+    {
+      "cat": "samy",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Tractive GPS (funciona en EEUU, México y casi toda Latam, requiere suscripción ~USD 5-10/mes) o AirTag como backup barato (no es GPS real, depende de iPhones cerca)."
+        }
+      ],
+      "links": [
+        {
+          "l": "Tractive",
+          "u": "https://tractive.com"
+        },
+        {
+          "u": "https://a.co/d/026lkztP",
+          "l": "https://a.co/d/026lkztP"
+        }
+      ],
+      "name": "Collar GPS",
+      "done": false
+    },
+    {
+      "notes": [
+        {
+          "tx": "Rampa telescópica o escalera plegable para que suba a la caja/camper sin saltar. Ver capacidad de peso y superficie antideslizante.",
+          "by": "Claude"
+        }
+      ],
+      "cat": "samy",
+      "links": [],
+      "done": false,
+      "name": "Escalera para el auto"
+    },
+    {
+      "cat": "samy",
+      "notes": [],
+      "links": [],
+      "name": "Chaleco",
+      "done": true
+    },
+    {
+      "links": [],
+      "done": false,
+      "name": "Bowls de comida",
+      "notes": [
+        {
+          "tx": "Plegables de silicona para viaje + uno con base antideslizante para el camper.",
+          "by": "Claude"
+        }
+      ],
+      "cat": "samy"
+    },
+    {
+      "cat": "samy",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Si va en ferry probablemente exijan kennel rígido aprobado IATA. Comprarlo pensando en el ferry La Paz y posibles tramos aéreos."
+        }
+      ],
+      "links": [],
+      "name": "Canil",
+      "done": false
+    },
+    {
+      "cat": "auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "IMPORTANTE (actualizado tras ver fotos): esta pantalla NO es el Sync 3 de fábrica -- es una unidad Android aftermarket (chip TS10, 4GB RAM+64GB, 9 pulgadas, etiqueta CP1-DH002-TS10-4+64) con la cámara, sensores y CarPlay ya conectados a esa placa. Se rompió el vidrio y a la carcasa nueva que pusieron le faltan botones. Tres caminos: (1) Unidad Android completa nueva para F-150 2015-2020: Idoing 12.1\" USD 699,99 (configurable por año/tipo de AC/audio, trae su propio arnés que se conecta al conector de FÁBRICA del F-150, no al de esta unidad rota) o SquareWheels G-Series USD 1.099 (premium, Qualcomm 8-core 8GB/128GB, arnés específico sin cortes, se puede volver a stock cuando quieran). (2) Pantalla OEM Ford genuina: kits completos de 4D Tech (USD 1.499,99-1.599,99) o Intelligent1Tech (USD 1.440-1.800 según nav) con módulo APIM + pantalla 8\" + arnés 100% Ford, PRE-PROGRAMADOS a su VIN antes de enviarlos (no hace falta pasar por el dealer), se conectan directo al arnés original de fábrica del F-150 que probablemente sigue intacto detrás del tablero. Mejor integración/confiabilidad para el viaje (clima, volante, cámara nativos) aunque pantalla más chica y sin Android apps. (3) Antes de comprar nada: preguntarle al taller que instaló la unidad Android si todavía tiene la pantalla/módulo Sync 3 original que sacaron -- sería la opción más barata y no necesita programación por ser la pieza original de esta misma camioneta."
+        }
+      ],
+      "links": [
+        {
+          "l": "Idoing 12.1\" F150 2015-2021 (USD 699,99)",
+          "u": "https://www.idoingstereo.com/products/idoing121inchcarstereoandroidradioplayernavigationgpsforfordf1502015-2021wirelesscarplayandroidautoheadunitdspwifiswc.html"
+        },
+        {
+          "l": "SquareWheels G-Series F150 2015-2020 (USD 1.099)",
+          "u": "https://squarewheelsauto.com/products/squarewheels-g-series-tesla-screen-for-ford-f150"
+        },
+        {
+          "l": "4D Tech - kit OEM Ford Sync3 (USD 1.499-1.599)",
+          "u": "https://www.4dtech.com/f150-19-20-4-to-8-sync-3-conversion-for-vehicles-w-sync/"
+        },
+        {
+          "l": "Intelligent1Tech - kit OEM Ford Sync3 (USD 1.440-1.800)",
+          "u": "https://intelligent1tech.com/products/2015-2019-ford-f150-4-sync1-to-8-sync3-conversion-upgrade"
+        }
+      ],
+      "name": "Pantalla / tablero (CarPlay no anda)",
+      "done": false
+    },
+    {
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Para 2015-2020 no existe un kit todo-en-uno simple de apertura/cierre eléctrico (a diferencia de camionetas más nuevas). Opciones reales: (a) Electric-Life Power Tailgate Lift Kit (~USD 431 en Summit Racing), motoriza el movimiento pero no es plug-and-play, requiere adaptar cableado; (b) amortiguador a gas tipo Tailgate Assist (~USD 60-100), solo frena la caída, no abre solo, más simple y barato; (c) portón motorizado de una F-150 de desarmadero + programación FORScan, más barato en piezas pero requiere mano de obra especializada. Ninguna es DIY rápida -- conviene resolverlo con un instalador en Denver (bloque 6), última ciudad grande antes de México."
+        }
+      ],
+      "cat": "auto",
+      "links": [
+        {
+          "l": "Buscar tailgate assist / power tailgate F150 en Amazon",
+          "u": "https://www.amazon.com/s?k=f150+tailgate+assist"
+        }
+      ],
+      "done": false,
+      "name": "Portón automático"
+    },
+    {
+      "cat": "auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Como el canopy tapa la vista trasera por el espejo, la solución más práctica es reemplazar el espejo retrovisor por uno con pantalla integrada (sistema aparte, no depende de la decisión de la pantalla del tablero). AUTO-VOX T2 (4.3 pulgadas, cable, buena visión nocturna, ~USD 140) es el más simple; AUTO-VOX T9 (9.35 pulgadas, touch, ~USD 190) si quieren más superficie de imagen. Se instala clip-on sobre el espejo actual, cámara con cable en la punta de la caja/portón."
+        }
+      ],
+      "name": "Cámara y sensores de retroceso",
+      "done": false,
+      "links": [
+        {
+          "l": "AUTO-VOX T2 rear view mirror camera (~USD 140)",
+          "u": "https://www.amazon.com/s?k=auto-vox+t2+rear+view+mirror+camera"
+        },
+        {
+          "l": "AUTO-VOX T9 (pantalla más grande, ~USD 190)",
+          "u": "https://www.amazon.com/s?k=auto-vox+t9+rear+view+mirror+camera"
+        }
+      ]
+    },
+    {
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "2 bolsas individuales (una por persona) que encierren el calzado completo, para separar barro/arena/humedad de la ropa. Knack Compressible Shoe Bag o Nomatic Shoe Cube tienen correa de compresión y son las mejor valoradas. Alternativa barata: IKEA PARKLA (~USD 3 c/u) si el presupuesto pesa más que la durabilidad."
+        }
+      ],
+      "cat": "auto",
+      "done": false,
+      "name": "Bolsitas para los zapatos",
+      "links": [
+        {
+          "l": "Shoe bags para viaje (comparar Knack / Nomatic / IKEA PARKLA)",
+          "u": "https://www.amazon.com/s?k=shoe+bag+travel+organizer+dirty+shoes"
+        }
+      ]
+    },
+    {
+      "links": [
+        {
+          "l": "Plano Storage Trunk 108qt con ruedas (~USD 39)",
+          "u": "https://www.amazon.com/s?k=plano+stackable+storage+trunk+truck+bed"
+        },
+        {
+          "l": "Front Runner Wolf Pack drawer kit (sistema modular)",
+          "u": "https://gtfoverland.com/products/front-runner-drawer-kit"
+        }
+      ],
+      "name": "Organizadores",
+      "done": false,
+      "cat": "auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Dos caminos según presupuesto. Entrada: Plano Storage Trunk 108qt con ruedas (~USD 39, 4.6 estrellas, best seller) -- simple y resistente para ropa/comida/uso general; comprar 2-3 y ver cómo entran en la caja con el canopy antes de invertir más. Sistema modular: Front Runner Wolf Pack Pro + drawer kit, cajones deslizables con cajas removibles pensado para overlanding, mucho más robusto pero cuesta varios cientos de USD y hay que medir el espacio exacto primero. Sugerencia: arrancar con Plano ahora; si hace falta upgrade, hacerlo en Denver (bloque 6) donde hay tiendas de overlanding."
+        }
+      ]
+    },
+    {
+      "name": "Bolsas de compresión",
+      "done": false,
+      "links": [
+        {
+          "l": "Sets de compression packing cubes para viaje",
+          "u": "https://www.amazon.com/s?k=compression+packing+cubes+set+travel"
+        }
+      ],
+      "cat": "auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Para ropa (de ambos): cubos de compresión con correa/cierre (packing cubes), no bolsas al vacío (necesitan bomba y se rompen con el uso constante en ruta). Un set con varios tamaños, uno por persona + uno aparte para ropa sucia. Para bolsas de dormir/mantas: bolsas de compresión con correas tipo trekking, elegir tamaño según el saco de dormir que compren."
+        }
+      ]
+    },
+    {
+      "cat": "auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Para el camper (heladera DC, laptop, luces, celulares, Starlink/proyector) lo más práctico NO es gel ni LiFePO4 fija instalada (requiere instalación eléctrica permanente). Recomendado: estación de energía portátil LiFePO4 (EcoFlow o Bluetti) de ~1000Wh + panel solar plegable 100-200W, para cubrir varios días sin sol. Si el uso es liviano (celus, luces, laptop): EcoFlow River 2 Max, 499Wh, ~USD 289. Si además corren heladera DC y proyector seguido: EcoFlow Delta 2 o Delta 3 Classic, 1024Wh, ~USD 429-439. Alternativa de mayor duración/ciclos: Bluetti Elite 100 V2, 1024Wh, ~USD 449. Se carga desde el 12V del auto en ruta o con el panel solar en los campamentos."
+        }
+      ],
+      "name": "Batería auxiliar / energía",
+      "done": false,
+      "links": [
+        {
+          "l": "EcoFlow River 2 Max / Delta 2 / Delta 3 (comparar capacidades)",
+          "u": "https://www.amazon.com/s?k=EcoFlow+portable+power+station"
+        },
+        {
+          "l": "Bluetti Elite 100 V2 (alternativa)",
+          "u": "https://www.amazon.com/s?k=Bluetti+Elite+100+V2"
+        }
+      ]
+    },
+    {
+      "links": [
+        {
+          "l": "RAM Mounts",
+          "u": "https://rammount.com"
+        },
+        {
+          "l": "Bulletpoint Metal Dash Mount F150 2015-2020, versión Spring-Loaded (~USD 97)",
+          "u": "https://www.amazon.com/s?k=bulletpoint+ford+f150+2015-2020+dash+phone+mount+spring+loaded"
+        }
+      ],
+      "name": "Soporte de celular",
+      "done": false,
+      "cat": "auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Para la F-150 2019 (13a generación), Bulletpoint tiene una base específica que encastra en el hueco del tablero sin taladrar. Como pediste solo mecánico (sin carga inalámbrica), la versión Spring-Loaded es la indicada: es un clamp universal que sirve con cualquier funda, sin depender de MagSafe. ~USD 97, 4.8 estrellas, 560 reseñas."
+        }
+      ]
+    },
+    {
+      "cat": "auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Tres niveles para las ventanas de cabina: (1) Económico/DIY: Reflectix cortado a medida (~USD 20 total), mejor aislación térmica, hay que cortarlo uno mismo por ventana. (2) Medio, a medida para F-150 2015-2020 SuperCrew: sets KUST o Canvcle de 6 piezas (parabrisas + laterales + trasera), malla que bloquea 99% UV y da privacidad sin tapar del todo la visibilidad, ~USD 50-54, 4.3-4.5 estrellas, miles de reseñas, fáciles de poner y sacar. (3) Premium a medida: Snap Shades 13a generación (2015-2020), ~USD 100, tela más gruesa tipo cortina, instalación a presión permanente. Recomendación: el set KUST/Canvcle (opción media) por mejor relación practicidad/privacidad/precio para un viaje largo."
+        }
+      ],
+      "links": [
+        {
+          "l": "KUST / Canvcle window shades F150 2015-2020 SuperCrew (set 6pzs, ~USD 52-54)",
+          "u": "https://www.amazon.com/s?k=snap+shades+ford+f150+supercrew+2015-2020+rear+window"
+        }
+      ],
+      "name": "Tapar ventanas por dentro (cabina)",
+      "done": false
+    },
+    {
+      "name": "Ollas",
+      "done": false,
+      "links": [],
+      "cat": "nosotros",
+      "notes": [
+        {
+          "tx": "Set anidable de camping (GSI Pinnacle o similar) para ahorrar espacio.",
+          "by": "Claude"
+        }
+      ]
+    },
+    {
+      "cat": "nosotros",
+      "notes": [],
+      "links": [],
+      "name": "Vajilla",
+      "done": false
+    },
+    {
+      "notes": [],
+      "cat": "nosotros",
+      "done": false,
+      "name": "Sillón inflable",
+      "links": []
+    },
+    {
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Inflable sí o sí por espacio. Útil en Flathead Lake (MT), Bahía Concepción (Baja) y lagos de Colorado."
+        }
+      ],
+      "cat": "nosotros",
+      "links": [
+        {
+          "l": "más ancho",
+          "u": "https://a.co/d/0b0ctrRe"
+        },
+        {
+          "l": "paddle completo",
+          "u": "https://a.co/d/08Lamir7"
+        }
+      ],
+      "done": false,
+      "name": "Paddleboard"
+    },
+    {
+      "links": [
+        {
+          "u": "https://a.co/d/0aQkNAjz",
+          "l": "bolsa doble"
+        },
+        {
+          "u": "https://a.co/d/01DFwVrN",
+          "l": "bolsa doble cuadrada"
+        },
+        {
+          "u": "https://a.co/d/0fVNSBA1",
+          "l": "quizás la zurda de la que ya tenemos"
+        }
+      ],
+      "name": "Bolsas de dormir",
+      "done": false,
+      "cat": "nosotros",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Rango de confort -5/0°C: van a tener noches frías en Glacier/Yellowstone/Colorado en agosto-septiembre."
+        }
+      ]
+    },
+    {
+      "name": "Pantalla proyector",
+      "done": false,
+      "links": [],
+      "cat": "nosotros",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Proyector portátil 12V/USB-C para cine en el camper."
+        }
+      ]
+    },
+    {
+      "done": false,
+      "name": "Dron",
+      "links": [
+        {
+          "u": "https://www.dji.com",
+          "l": "DJI Mini"
+        }
+      ],
+      "notes": [
+        {
+          "tx": "Menos de 250g (DJI Mini) para simplificar registro. Ojo: varios parques nacionales de EEUU y México PROHÍBEN drones; revisar reglas por país de la ruta.",
+          "by": "Claude"
+        }
+      ],
+      "cat": "nosotros"
+    },
+    {
+      "name": "Starlink / internet",
+      "done": false,
+      "links": [
+        {
+          "u": "https://www.starlink.com",
+          "l": "Starlink Mini"
+        },
+        {
+          "u": "https://holafly.sjv.io/kO7a5L",
+          "l": "Holafly"
+        }
+      ],
+      "cat": "nosotros",
+      "notes": [
+        {
+          "tx": "Starlink Mini + plan Roam para zonas remotas. Complementar con eSIM para ciudades (ver ítem en Trámites). Verificar cobertura Roam en Centroamérica país por país.",
+          "by": "Claude"
+        }
+      ]
+    },
+    {
+      "done": false,
+      "name": "Kindle",
+      "links": [
+        {
+          "l": "Kindle",
+          "u": "https://a.co/d/0e3HI7Td"
+        },
+        {
+          "l": "Kobo",
+          "u": "https://a.co/d/01nHqjuJ"
+        }
+      ],
+      "notes": [],
+      "cat": "nosotros"
+    },
+    {
+      "links": [],
+      "done": false,
+      "name": "Computadora",
+      "notes": [],
+      "cat": "nosotros"
+    },
+    {
+      "done": false,
+      "name": "Repelente de mosquitos",
+      "links": [],
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Con DEET 30%+ o picaridina para Centroamérica (dengue/zika). Llevar stock desde EEUU."
+        }
+      ],
+      "cat": "nosotros"
+    },
+    {
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Ya tenés cuenta en USD en banco de EEUU: sumar Schwab Bank Investor Checking. Devuelve el 100% de las comisiones de cajero automático en cualquier país del mundo, sin tope de reembolsos ni de monto, acreditado a fin de cada mes (solo aplica a retiros de efectivo con la Visa Platinum Debit de Schwab, no a compras ni fees de conversión de moneda). Requisito: abrir junto con una cuenta Schwab One brokerage, sin costo ni mínimo. Llevar 2-3 tarjetas (Schwab + Wise + una de respaldo) guardadas en lugares distintos del auto por si se pierde o clonan una."
+        }
+      ],
+      "cat": "tramites",
+      "done": false,
+      "name": "Tarjeta alternativa",
+      "links": [
+        {
+          "u": "https://wise.com",
+          "l": "Wise"
+        },
+        {
+          "l": "Schwab Bank Investor Checking",
+          "u": "https://www.schwab.com/checking"
+        }
+      ]
+    },
+    {
+      "links": [
+        {
+          "u": "https://www.bajabound.com",
+          "l": "Baja Bound"
+        },
+        {
+          "u": "https://www.sanborns.com",
+          "l": "Sanborns"
+        }
+      ],
+      "done": false,
+      "name": "Seguro internacional del auto",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Ya tenés seguro de EEUU, pero ojo: la gran mayoría de pólizas de EEUU NO cubren fuera de EEUU/Canadá, hay que confirmarlo con la aseguradora antes de cruzar a Nogales. Para México: Baja Bound o Sanborns, se cotiza y contrata online en minutos, cubre Baja y/o México completo. Precio de referencia: entre USD 1 y 70 por día según duración (cuanto más largo el período contratado, más barato el día). Para Centroamérica no existe una póliza continental: se compra obligatoriamente en cada frontera. Precios de referencia 2026: Guatemala sin costo de seguro (pero USD 3 de salida), Nicaragua USD 12 por 30 días, Costa Rica USD 44 por 90 días (obligatorio, se paga junto con el TIP en el ingreso), Panamá USD 25 + USD 1 de fumigación. En total calcular unos USD 80-90 en seguros de frontera para cruzar toda Centroamérica."
+        }
+      ],
+      "cat": "tramites"
+    },
+    {
+      "cat": "tramites",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Como el viaje completo dura menos de un año, no hace falta necesariamente el plan mensual sin límite de SafetyWing Nomad (pensado para nómades de largo plazo), aunque también sirve y se puede cancelar cuando quieran. SafetyWing Essential cuesta unos USD 63 cada 4 semanas (18-39 años), cobertura en más de 170 países incluyendo todo el recorrido, se paga mes a mes y se puede pausar. World Nomads cuesta 2-3 veces más pero cubre mejor actividades de aventura (trekking, buceo, etc.) si van a hacer ese tipo de actividades en el camino. Recomendación: SafetyWing Essential por precio y flexibilidad, salvo que planeen actividades de riesgo específicas que no cubra."
+        }
+      ],
+      "links": [
+        {
+          "u": "https://safetywing.com",
+          "l": "SafetyWing"
+        },
+        {
+          "u": "https://assist-365.com/us/?utm_medium=organic&utm_source=social&utm_content=link_in_bio&fbclid=PAb21jcAS352VleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAacLrbKz13xDJXHY3cAajmfNVol0F2L5vdSRxUVShbJmlnAF1fQvFHG4sh0_Nw_aem_fF7yDuY8xixWJVJSHkyu3g",
+          "l": "Asist365"
+        },
+        {
+          "l": "World Nomads (alternativa para actividades de aventura)",
+          "u": "https://www.worldnomads.com"
+        }
+      ],
+      "name": "Seguro del viajero",
+      "done": false
+    },
+    {
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Como solo necesitan datos (llamadas por WhatsApp), Airalo LatamLink es la opción más barata: eSIM regional que cubre 17 países de Latam, planes desde ~USD 5 (1GB) hasta ~USD 42 (20GB), es de GB fijo, no ilimitado. Holafly es la alternativa ilimitada pero con Fair Use Policy que baja la velocidad después de 500MB-2GB por día, y sale más caro (~USD 19 por 5 días a ~USD 69 por 30 días). Para el uso mixto EEUU + México + Centroamérica: comprar un eSIM de EEUU aparte (Airalo también tiene) y activar el LatamLink recién al cruzar a México, para no gastar días del plan regional mientras están en EEUU."
+        }
+      ],
+      "cat": "tramites",
+      "done": false,
+      "name": "Teléfono eSIM",
+      "links": [
+        {
+          "l": "Airalo Latin America eSIM (LatamLink)",
+          "u": "https://www.airalo.com/latin-america-esim"
+        }
+      ]
+    },
+    {
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Confirmado que el título está a tu nombre, así que el trámite es directo. Para 2026 se puede hacer 100% online hasta 6 meses antes en www.banjercito.com.mx/registroVehiculos (evita la fila en la garita). Costo fijo: 1232 pesos mexicanos (~USD 73) de trámite administrativo, más un depósito en garantía reembolsable de USD 200 a 400 según el año del vehículo (F-150 2019 cae en un rango medio de esa tabla). El depósito se devuelve a la misma tarjeta con la que se pagó, al salir de México. Validez: 180 días naturales con entradas/salidas múltiples dentro de un período de 12 meses, alcanza de sobra para Baja + México central. Solo hace falta para México continental: Baja California no lo exige. Llevar a la garita el título ORIGINAL (no copia), pasaporte y licencia, aunque el registro se haga online antes."
+        }
+      ],
+      "cat": "tramites",
+      "done": false,
+      "name": "Aduana (TIP vehículo)",
+      "links": [
+        {
+          "u": "https://www.banjercito.com.mx",
+          "l": "Banjercito"
+        }
+      ]
+    },
+    {
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Para el ferry La Paz: confirmar con Baja Ferries/TMC dónde viaja el perro (algunos exigen kennel en cubierta). Para el Tapón del Darién (Panamá-Colombia): ya no existe ferry de pasajeros, dejó de operar hace años. Las opciones actuales son embarque de carga: RoRo (Roll-on/Roll-off, el auto se conduce directo al barco, la opción más barata y de menor riesgo para vehículos grandes como la F-150), en contenedor, o en flat rack. Ruta típica: Colón (lado Caribe de Panamá) hacia Cartagena, Santa Marta o Barranquilla (Colombia). Como el auto va como carga, ustedes y Samy tienen que resolver el cruce por separado: revisar vuelos (ej. Copa Airlines) y su política de mascotas en cabina/bodega, coordinando para llegar al mismo puerto en fechas cercanas al auto. Conviene contactar con varios meses de anticipación a un agente de shipping para overlanders en Colón, ya que el papeleo aduanero de ambos lados toma varios días."
+        }
+      ],
+      "cat": "tramites",
+      "links": [
+        {
+          "l": "Baja Ferries",
+          "u": "https://www.bajaferries.com.mx"
+        },
+        {
+          "l": "Guía de shipping RoRo Darién Gap (Panamá-Colombia)",
+          "u": "https://www.google.com/search?q=Darien+Gap+vehicle+shipping+RoRo+Panama+Colombia+overlander"
+        }
+      ],
+      "done": false,
+      "name": "Aerolínea / transporte Samy"
+    },
+    {
+      "name": "Wok",
+      "done": false,
+      "links": [],
+      "cat": "auto",
+      "notes": []
+    },
+    {
+      "cat": "tramites",
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Si la licencia de Martín es argentina, el IDP se tramita en Argentina ANTES de salir del país, a través del Automóvil Club Argentino (ACA) -- no se puede sacar una vez ya en EEUU. Si en cambio la licencia es de EEUU, se tramita en minutos con AAA (~USD 20, se necesita una foto tipo carnet). No es obligatorio en México ni en la mayoría de Centroamérica si la licencia ya está en alfabeto latino y con foto, pero es un respaldo barato que evita problemas en controles o retenes. Importante: el IDP nunca reemplaza la licencia, hay que llevar siempre ambas juntas."
+        }
+      ],
+      "name": "Licencia de conducir internacional",
+      "done": false,
+      "links": [
+        {
+          "l": "AAA International Driving Permit (licencia de EEUU)",
+          "u": "https://www.aaa.com/vacation/idpf.html"
+        },
+        {
+          "l": "Automóvil Club Argentino - IDP (licencia argentina)",
+          "u": "https://www.aca.org.ar"
+        }
+      ]
+    },
+    {
+      "cat": "samy",
+      "notes": [],
+      "links": [
+        {
+          "u": "https://a.co/d/021yIMlH",
+          "l": "x6"
+        }
+      ],
+      "name": "Pastilla anti pulga y garrapatas",
+      "done": false
+    },
+    {
+      "cat": "tramites",
+      "name": "Pasaporte / status migratorio",
+      "done": false,
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Revisar que el pasaporte tenga vigencia mínima de 6 meses desde la fecha de entrada a cada país (lo piden en la mayoría de fronteras de Centroamérica). Confirmar el estatus migratorio para la estadía en EEUU antes de salir el 10 de agosto (ESTA, visa u otro), ya que de ahí sale el margen de 60 días mencionado en el plan -- hay que salir de EEUU antes de que venza ese permiso. Revisar también país por país si la nacionalidad de Martín necesita visa para algún tramo de Centroamérica (México y la mayoría de Centroamérica no piden visa a argentinos para estadías turísticas cortas, pero conviene confirmarlo cerca de la fecha de cada cruce, no todo junto ahora)."
+        }
+      ],
+      "links": []
+    },
+    {
+      "cat": "tramites",
+      "name": "Título / registro del auto",
+      "done": false,
+      "notes": [
+        {
+          "by": "Claude",
+          "tx": "Confirmado que el título de la F-150 está a nombre de Martín, esto simplifica todos los trámites de frontera (TIP en México, seguros, y el papeleo de shipping en el Tapón del Darién). Llevar el título ORIGINAL físico: Banjercito y otras aduanas piden el documento original, no alcanza una copia ni una foto. Sacar 3-4 fotocopias certificadas antes de salir de EEUU, y además fotos digitales guardadas en Drive por si se pierde el original en el camino."
+        }
+      ],
+      "links": []
+    }
+  ]
+};
+
+async function subir() {
+  const statusEl = document.getElementById('status');
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  statusEl.style.display = 'block';
+  statusEl.className = 'info';
+  statusEl.textContent = 'Subiendo... (unos segundos)';
+  try {
+    await db.collection('mapa_ruta').doc('estado').set(MERGED_STATE);
+    statusEl.className = 'ok';
+    statusEl.textContent = '✔ Listo. Se subieron ' + MERGED_STATE.items.length + ' ítems y ' + MERGED_STATE.stops.length + ' paradas. Ya podés abrir f150-expedition.vercel.app/mapa.html y ver los cambios (pestaña Compras).';
+  } catch (e) {
+    statusEl.className = 'err';
+    statusEl.textContent = 'Error al subir: ' + e.message + '\n\nSi dice algo de permisos, puede que las reglas de Firestore ya no estén en modo prueba.';
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
