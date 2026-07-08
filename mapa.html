@@ -1980,6 +1980,21 @@ function renderCalendar() {
 /* ================= INTERACTION DRAG / RESIZE CALENDAR ================= */
 let calDragState = null;
 
+function getWeekRowBounds() {
+  const weekRows = Array.from(document.querySelectorAll('.calendar-week-row'));
+  return weekRows.map(row => {
+    const r = row.getBoundingClientRect();
+    return {
+      el: row,
+      top: r.top,
+      bottom: r.bottom,
+      left: r.left,
+      width: r.width,
+      cells: Array.from(row.querySelectorAll('.calendar-week-bg-cell'))
+    };
+  });
+}
+
 function calHandlePointerDown(e, stopIdx, startCol, span) {
   if (e.button !== 0) return; // Left click only
   
@@ -1997,6 +2012,7 @@ function calHandlePointerDown(e, stopIdx, startCol, span) {
   bar.setPointerCapture(e.pointerId);
   bar.style.opacity = '0.75';
   bar.style.zIndex = '1000';
+  bar.style.transition = 'none'; // Disable transition during drag
   
   const stop = state.stops[stopIdx];
   calDragState = {
@@ -2009,7 +2025,8 @@ function calHandlePointerDown(e, stopIdx, startCol, span) {
     initialStartCol: startCol,
     initialSpan: span,
     barEl: bar,
-    lastDeltaDays: 0
+    lastDeltaDays: 0,
+    rowBounds: getWeekRowBounds() // Cache week row bounds on down to avoid thrashing layout on move
   };
 }
 
@@ -2030,6 +2047,7 @@ function calHandleResizeDown(e, stopIdx, edge, startCol, span) {
   bar.setPointerCapture(e.pointerId);
   bar.style.opacity = '0.75';
   bar.style.zIndex = '1000';
+  bar.style.transition = 'none'; // Disable transition during drag
   
   const stop = state.stops[stopIdx];
   calDragState = {
@@ -2043,7 +2061,8 @@ function calHandleResizeDown(e, stopIdx, edge, startCol, span) {
     initialStartCol: startCol,
     initialSpan: span,
     barEl: bar,
-    lastDeltaDays: 0
+    lastDeltaDays: 0,
+    rowBounds: getWeekRowBounds() // Cache bounds
   };
 }
 
@@ -2051,35 +2070,31 @@ window.addEventListener('pointermove', e => {
   if (!calDragState) return;
   if (e.pointerId !== calDragState.pointerId) return;
   
-  const weekRows = document.querySelectorAll('.calendar-week-row');
-  let activeWeekRow = null;
-  for (let row of weekRows) {
-    const r = row.getBoundingClientRect();
-    if (e.clientY >= r.top && e.clientY <= r.bottom) {
-      activeWeekRow = row;
+  // Find which row the pointer is currently over (using cached row bounds)
+  let activeRowBound = null;
+  for (let bound of calDragState.rowBounds) {
+    if (e.clientY >= bound.top && e.clientY <= bound.bottom) {
+      activeRowBound = bound;
       break;
     }
   }
   
-  if (!activeWeekRow && weekRows.length > 0) {
-    const firstRect = weekRows[0].getBoundingClientRect();
-    const lastRect = weekRows[weekRows.length - 1].getBoundingClientRect();
-    if (e.clientY < firstRect.top) {
-      activeWeekRow = weekRows[0];
-    } else if (e.clientY > lastRect.bottom) {
-      activeWeekRow = weekRows[weekRows.length - 1];
+  // Clamp boundaries if cursor is outside grid top/bottom
+  if (!activeRowBound && calDragState.rowBounds.length > 0) {
+    if (e.clientY < calDragState.rowBounds[0].top) {
+      activeRowBound = calDragState.rowBounds[0];
+    } else if (e.clientY > calDragState.rowBounds[calDragState.rowBounds.length - 1].bottom) {
+      activeRowBound = calDragState.rowBounds[calDragState.rowBounds.length - 1];
     }
   }
   
-  if (!activeWeekRow) return;
+  if (!activeRowBound) return;
   
-  const cells = activeWeekRow.querySelectorAll('.calendar-week-bg-cell');
-  const r = activeWeekRow.getBoundingClientRect();
-  let colIdx = Math.floor((e.clientX - r.left) / (r.width / 7));
+  let colIdx = Math.floor((e.clientX - activeRowBound.left) / (activeRowBound.width / 7));
   if (colIdx < 0) colIdx = 0;
   if (colIdx > 6) colIdx = 6;
   
-  const currentDateStr = cells[colIdx]?.getAttribute('data-date');
+  const currentDateStr = activeRowBound.cells[colIdx]?.getAttribute('data-date');
   if (!currentDateStr) return;
   
   const dStart = new Date(calDragState.initialPointerDate + 'T00:00:00');
@@ -2109,12 +2124,12 @@ window.addEventListener('pointermove', e => {
     }
   }
   
-  // Update styling instantly (smooth UI feedback!)
+  // Update styling instantly
   calDragState.barEl.style.gridColumn = `${tempStartCol} / span ${tempSpan}`;
   
   const currentWeekRow = calDragState.barEl.closest('.calendar-week-row');
-  if (activeWeekRow && activeWeekRow !== currentWeekRow) {
-    const newContent = activeWeekRow.querySelector('.calendar-week-content');
+  if (activeRowBound.el !== currentWeekRow) {
+    const newContent = activeRowBound.el.querySelector('.calendar-week-content');
     if (newContent) {
       newContent.appendChild(calDragState.barEl);
     }
@@ -2128,6 +2143,8 @@ window.addEventListener('pointerup', e => {
   const bar = calDragState.barEl;
   bar.style.opacity = '';
   bar.style.zIndex = '';
+  bar.style.transition = ''; // Restore transition
+  
   try {
     bar.releasePointerCapture(e.pointerId);
   } catch(err) {}
@@ -2285,7 +2302,7 @@ function computeBudgetEstimate(overrideDays) {
 
   const km = computeFuelKm();
   const fuelParam = state.budget.fuel;
-  const fuelTotal = (km / (fuelParam.kmPerLiter || 6.5)) * (fuelParam.pricePerLiter || 1.1);
+  const fuelTotal = km * (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
 
   let oneOffTotal = 0;
   (state.budget.oneOff || []).forEach(o => {
@@ -2293,7 +2310,7 @@ function computeBudgetEstimate(overrideDays) {
   });
 
   const subtotal = dailyTotal + fuelTotal + oneOffTotal;
-  const contingency = subtotal * ((state.budget.contingencyPct || 10) / 100);
+  const contingency = subtotal * ((state.budget.contingencyPct || 15) / 100);
 
   return {
     days,
@@ -2315,10 +2332,10 @@ function getCategoryEstimate(cat, days) {
   if (cat === 'combustible') {
     const km = computeFuelKm();
     const fuelParam = state.budget.fuel;
-    return (km / (fuelParam.kmPerLiter || 6.5)) * (fuelParam.pricePerLiter || 1.1);
+    return km * (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
   }
   let total = 0;
-  if (cat === 'seguros' || cat === 'darien' || cat === 'otros') {
+  if (cat === 'seguros' || cat === 'pasajes' || cat === 'tramites' || cat === 'otros') {
     (state.budget.oneOff || []).forEach(o => {
       if (o.cat === cat) total += o.amount || 0;
     });
@@ -2446,9 +2463,12 @@ function renderExpenses() {
           <input type="text" value="${esc(o.name)}" style="flex:2; font-size:11.5px; padding:4px 6px;" onchange="state.budget.oneOff[${idx}].name = this.value; save(); renderExpenses();">
           <input type="number" value="${o.amount}" style="width:70px; font-size:11.5px; padding:4px 6px;" onchange="updateOneOffAmount(${idx}, this.value)">
           <select style="width:120px; font-size:11px; padding:4px 6px;" onchange="state.budget.oneOff[${idx}].cat = this.value; save(); renderExpenses();">
-            ${Object.keys(EXPENSE_CATS).map(catKey => `<option value="${catKey}" ${o.cat === catKey ? 'selected' : ''}>${EXPENSE_CATS[catKey].t.split(' ')[1] || catKey}</option>`).join('')}
+            ${Object.keys(EXPENSE_CATS).map(catKey => {
+              const label = EXPENSE_CATS[catKey].t.split(/[ (\\/]/)[0];
+              return `<option value="${catKey}" ${o.cat === catKey ? 'selected' : ''}>${label}</option>`;
+            }).join('')}
           </select>
-          <button class="btn-del" style="font-size:13px; padding:2px 6px; border:none; background:transparent; cursor:pointer;" onclick="delOneOff(${idx})">🗑️</button>
+          <button class="stop-btn-sm" style="font-size:13px; padding:4px 8px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:6px; cursor:pointer;" onclick="delOneOff(${idx})">🗑️</button>
         </div>
       `).join('');
     }
@@ -2461,21 +2481,22 @@ function updateExpensesUI(activeDays) {
   const est = computeBudgetEstimate(activeDays);
 
   const totalVal = document.getElementById("exp-total-val");
-  if (totalVal) totalVal.innerText = `$${est.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (totalVal) totalVal.innerText = `$${est.total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const daysVal = document.getElementById("exp-days-val");
   if (daysVal) daysVal.innerText = est.days;
 
   const categoriesList = document.getElementById("exp-categories-list");
   if (categoriesList) {
+    const contingencyFactor = 1 + (state.budget.contingencyPct || 15) / 100;
     categoriesList.innerHTML = Object.keys(EXPENSE_CATS).map(c => {
-      const catEst = getCategoryEstimate(c, est.days);
+      const catEst = getCategoryEstimate(c, est.days) * contingencyFactor;
       const catPct = est.total > 0 ? (catEst / est.total) * 100 : 0;
       return `
         <div class="expense-cat-card">
           <div class="expense-cat-row">
-            <span>${EXPENSE_CATS[c].t}</span>
-            <span>$${catEst.toLocaleString('en-US', { maximumFractionDigits: 0 })} <span class="expense-cat-pct">(${catPct.toFixed(0)}%)</span></span>
+            <span><span style="color:${EXPENSE_CATS[c].c}; margin-right:6px;">●</span>${EXPENSE_CATS[c].t}</span>
+            <span>$${catEst.toLocaleString('es-AR', { maximumFractionDigits: 0 })} <span class="expense-cat-pct">(${catPct.toFixed(1)}%)</span></span>
           </div>
           <div class="bar" style="height: 6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
             <div style="width: ${Math.min(100, catPct)}%; height: 100%; background: ${EXPENSE_CATS[c].c};"></div>
