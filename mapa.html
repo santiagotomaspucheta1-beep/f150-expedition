@@ -1002,7 +1002,7 @@ let state = {
   stopsVersion: 3,
   expenses: [],
   budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-  expensesVersion: 2
+  expensesVersion: 3
 };
 // Última foto de "items" que sabemos que coincide con Firebase (justo después de
 // leer un snapshot). save() la usa como base para un diff de 3 vías: solo lo que
@@ -1111,7 +1111,7 @@ function resetData(){
       stopsVersion: 3,
       expenses: [],
       budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-      expensesVersion: 2
+      expensesVersion: 3
     };
     save(); renderAll();
   }
@@ -2378,35 +2378,34 @@ function renderExpenses() {
       
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">🍔 Comida diario (USD):</label>
+          <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Consumo Nafta (L/100km)</label>
+          <input type="number" step="0.1" value="${state.budget.fuel.kmPerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'kmPerLiter', this.value)">
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Precio Litro Nafta (USD)</label>
+          <input type="number" step="0.01" value="${state.budget.fuel.pricePerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'pricePerLiter', this.value)">
+        </div>
+      </div>
+
+      <div style="font-weight:700; font-size:11px; color:#475569; margin-bottom:6px;">Gastos diarios estimados (USD):</div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div>
+          <label style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px; margin-bottom:2px;">🍔 Comida</label>
           <input type="number" value="${state.budget.perDayUsd.comida}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'comida', this.value)">
         </div>
         <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">🏨 Alojamiento diario (USD):</label>
+          <label style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px; margin-bottom:2px;">🏕️ Alojamiento</label>
           <input type="number" value="${state.budget.perDayUsd.alojamiento}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'alojamiento', this.value)">
         </div>
-      </div>
-
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
         <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">📦 Otros diario (USD):</label>
+          <label style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px; margin-bottom:2px;">📦 Otros</label>
           <input type="number" value="${state.budget.perDayUsd.otros}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'otros', this.value)">
         </div>
-        <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">🛡️ Contingencia (%):</label>
-          <input type="number" value="${state.budget.contingencyPct}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('contingencyPct', '', this.value)">
-        </div>
       </div>
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-        <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">⛽ Precio Nafta (USD/L):</label>
-          <input type="number" step="0.05" value="${state.budget.fuel.pricePerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'pricePerLiter', this.value)">
-        </div>
-        <div>
-          <label style="font-size:11px; font-weight:700; color:#475569;">🚙 Consumo (km/L):</label>
-          <input type="number" step="0.1" value="${state.budget.fuel.kmPerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'kmPerLiter', this.value)">
-        </div>
+      <div>
+        <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Margen Contingencia (%)</label>
+        <input type="number" value="${state.budget.contingencyPct}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('contingencyPct', '', this.value)">
       </div>
     `;
   }
