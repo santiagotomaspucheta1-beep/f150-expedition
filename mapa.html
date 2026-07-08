@@ -1701,14 +1701,6 @@ function renderExpenses() {
             <!-- Parámetros del presupuesto -->
             <div class="poi-control-card" style="margin-bottom:16px;" id="exp-config-inputs"></div>
 
-            <!-- Costos Puntuales -->
-            <div>
-              <div style="font-weight:800; font-size:13.5px; color:#1e293b; margin-bottom:8px; display:flex; justify-content:between; align-items:center;">
-                <span>Costos Puntuales Únicos</span>
-                <button class="stop-btn-sm" style="margin-left:auto; padding:3px 8px; font-size:11px;" onclick="addOneOff()">＋ Agregar</button>
-              </div>
-              <div class="poi-control-card" id="exp-oneoff-list"></div>
-            </div>
           </div>
 
           <!-- COLUMNA 2: ESTIMADOS Y CATEGORIAS -->
@@ -1716,6 +1708,15 @@ function renderExpenses() {
             <div class="expense-section-title">📊 Desglose por Categoría</div>
             <div id="exp-categories-list"></div>
           </div>
+        </div>
+
+        <!-- Costos Puntuales Únicos (Fuera del grid, ancho completo) -->
+        <div style="margin-top: 24px;">
+          <div style="font-weight:800; font-size:13.5px; color:#1e293b; margin-bottom:8px; display:flex; justify-content:between; align-items:center;">
+            <span>Costos Puntuales Únicos</span>
+            <button class="stop-btn-sm" style="margin-left:auto; padding:3px 8px; font-size:11px;" onclick="addOneOff()">＋ Agregar</button>
+          </div>
+          <div class="poi-control-card" id="exp-oneoff-list"></div>
         </div>
       </div>
     `;
