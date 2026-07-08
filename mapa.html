@@ -1968,15 +1968,23 @@ function renderCalendar() {
   html += `</div>`;
 
   html += `<div class="calendar-quick-months">`;
-  const quicks = [
-    { name: "Ago", y: 2026, m: 7 },
-    { name: "Sep", y: 2026, m: 8 },
-    { name: "Oct", y: 2026, m: 9 },
-    { name: "Nov", y: 2026, m: 10 },
-    { name: "Dic", y: 2026, m: 11 },
-    { name: "Ene 27", y: 2027, m: 0 },
-    { name: "Feb 27", y: 2027, m: 1 }
-  ];
+  const quicks = [];
+  let curr = new Date(globalMin.getFullYear(), globalMin.getMonth(), 1);
+  const endLimit = new Date(globalMax.getFullYear(), globalMax.getMonth(), 1);
+  // Guard loop limits to prevent infinite loops in case of corrupt dates
+  let loopCount = 0;
+  while (curr <= endLimit && loopCount < 48) {
+    loopCount++;
+    const y = curr.getFullYear();
+    const m = curr.getMonth();
+    const suffix = y === 2026 ? "" : " '" + String(y).slice(-2);
+    quicks.push({
+      name: months[m] + suffix,
+      y: y,
+      m: m
+    });
+    curr.setMonth(curr.getMonth() + 1);
+  }
   quicks.forEach(q => {
     const activeClass = (year === q.y && month === q.m) ? 'active' : '';
     html += `<button class="calendar-quick-btn ${activeClass}" onclick="calSetMonth(${q.y}, ${q.m})">${q.name}</button>`;
