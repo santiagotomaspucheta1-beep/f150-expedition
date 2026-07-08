@@ -262,9 +262,9 @@
     font-size: 12px;
     font-weight: 700;
     color: #fff;
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: 6px;
-    cursor: pointer;
+    cursor: grab;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -273,6 +273,11 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.4);
     margin: 3px 6px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    touch-action: none; /* Evita scroll en móvil al arrastrar */
+  }
+  .calendar-event-bar:active {
+    cursor: grabbing;
   }
   .calendar-event-bar:hover {
     filter: brightness(1.1);
@@ -281,6 +286,19 @@
   .calendar-event-bar.selected {
     outline: 3px solid #f59e0b;
     box-shadow: 0 0 10px rgba(245,158,11,0.5);
+  }
+  .resize-handle-left, .resize-handle-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: col-resize;
+    z-index: 5;
+  }
+  .resize-handle-left { left: 0; }
+  .resize-handle-right { right: 0; }
+  .resize-handle-left:hover, .resize-handle-right:hover {
+    background: rgba(255, 255, 255, 0.25);
   }
   
   /* Detail panel */
@@ -346,6 +364,8 @@
   .det-btn-map:hover { background: #0d47a1; }
   .det-btn-edit { background: #ffffff; color: #475569; }
   .det-btn-edit:hover { background: #f1f5f9; }
+  .det-btn-delete { background: #ef4444; color: #fff; border-color: #ef4444 !important; }
+  .det-btn-delete:hover { background: #dc2626; }
   @keyframes calFadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: none; } }
   @media (max-width:700px){ #sidebar{ width:170px; } }
   /* ---- ETIQUETAS EN EL MAPA ---- */
@@ -1887,7 +1907,8 @@ function renderCalendar() {
     weekHtml += `<div class="calendar-week-bg">`;
     week.forEach(d => {
       const isOther = !d.isCurrentMonth ? ' other-month' : '';
-      weekHtml += `<div class="calendar-week-bg-cell${isOther}"></div>`;
+      const dateStr = d.date.toISOString().split('T')[0];
+      weekHtml += `<div class="calendar-week-bg-cell${isOther}" data-date="${dateStr}"></div>`;
     });
     weekHtml += `</div>`;
 
@@ -1909,8 +1930,11 @@ function renderCalendar() {
       const selectedClass = isSel ? ' selected' : '';
       weekHtml += `<div class="calendar-event-bar${selectedClass}" 
                         onclick="event.stopPropagation();calSelectStop(${ws.idx})" 
+                        onpointerdown="calHandlePointerDown(event, ${ws.idx})"
                         style="background:${cVal}; grid-column: ${ws.startCol} / span ${ws.span}; grid-row: ${ws.slotIdx + 2};" 
                         title="${ws.stop.n}\n${formatDateRange(ws.stop.start, ws.stop.end)}">`;
+      weekHtml += `<div class="resize-handle-left" onpointerdown="event.stopPropagation(); calHandleResizeDown(event, ${ws.idx}, 'left')"></div>`;
+      weekHtml += `<div class="resize-handle-right" onpointerdown="event.stopPropagation(); calHandleResizeDown(event, ${ws.idx}, 'right')"></div>`;
       weekHtml += `${ws.idx + 1}. ${ws.stop.n}`;
       weekHtml += `</div>`;
     });
@@ -1950,9 +1974,12 @@ function renderCalendar() {
     }
     html += `<div class="cal-detail-row"><span class="det-icon">📍</span><div class="det-text"><strong>Coordenadas</strong>${det.lat.toFixed(4)}, ${det.lon.toFixed(4)}</div></div>`;
     html += `</div>`;
-    html += `<div class="cal-detail-foot">`;
+    html += `<div class="cal-detail-foot" style="display:flex; flex-direction:column; gap:6px;">`;
+    html += `<div style="display:flex; gap:6px; width:100%;">`;
     html += `<button class="det-btn-map" onclick="focusStopOnMap(${calSelectedIdx})">🗺️ Ver en mapa</button>`;
     html += `<button class="det-btn-edit" onclick="editStop(${calSelectedIdx});showTab('map');">✏️ Editar</button>`;
+    html += `</div>`;
+    html += `<button class="det-btn-delete" onclick="deleteStopFromCalendar(${calSelectedIdx})">🗑️ Eliminar parada</button>`;
     html += `</div>`;
   } else {
     html += `<div style="padding:40px 20px;text-align:center;color:#64748b;">`;
@@ -1964,6 +1991,183 @@ function renderCalendar() {
 
   html += `</div>`; // cal-layout
   container.innerHTML = html;
+}
+
+/* ================= INTERACTION DRAG / RESIZE CALENDAR ================= */
+let calDragState = null;
+
+function calHandlePointerDown(e, stopIdx) {
+  if (e.button !== 0) return; // Left click only
+  const dateCell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.calendar-week-bg-cell');
+  if (!dateCell) return;
+  const startDateStr = dateCell.getAttribute('data-date');
+  if (!startDateStr) return;
+  
+  const bar = e.currentTarget;
+  bar.setPointerCapture(e.pointerId);
+  const stop = state.stops[stopIdx];
+  calDragState = {
+    type: 'move',
+    stopIdx: stopIdx,
+    pointerId: e.pointerId,
+    initialPointerDate: startDateStr,
+    initialStopStart: stop.start,
+    initialStopEnd: stop.end,
+    barEl: bar,
+    lastDeltaDays: 0
+  };
+}
+
+function calHandleResizeDown(e, stopIdx, edge) {
+  if (e.button !== 0) return; // Left click only
+  const dateCell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.calendar-week-bg-cell');
+  if (!dateCell) return;
+  const startDateStr = dateCell.getAttribute('data-date');
+  if (!startDateStr) return;
+  
+  const handle = e.currentTarget;
+  const bar = handle.parentElement;
+  bar.setPointerCapture(e.pointerId);
+  const stop = state.stops[stopIdx];
+  calDragState = {
+    type: 'resize',
+    edge: edge,
+    stopIdx: stopIdx,
+    pointerId: e.pointerId,
+    initialPointerDate: startDateStr,
+    initialStopStart: stop.start,
+    initialStopEnd: stop.end,
+    barEl: bar,
+    lastDeltaDays: 0
+  };
+}
+
+window.addEventListener('pointermove', e => {
+  if (!calDragState) return;
+  if (e.pointerId !== calDragState.pointerId) return;
+  
+  const dateCell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.calendar-week-bg-cell');
+  if (!dateCell) return;
+  const currentDateStr = dateCell.getAttribute('data-date');
+  if (!currentDateStr) return;
+  
+  const dStart = new Date(calDragState.initialPointerDate + 'T00:00:00');
+  const dCurrent = new Date(currentDateStr + 'T00:00:00');
+  const deltaDays = Math.round((dCurrent - dStart) / 86400000);
+  
+  if (deltaDays === calDragState.lastDeltaDays) return;
+  calDragState.lastDeltaDays = deltaDays;
+  
+  const stop = state.stops[calDragState.stopIdx];
+  let tempStart = calDragState.initialStopStart;
+  let tempEnd = calDragState.initialStopEnd;
+  
+  if (calDragState.type === 'move') {
+    tempStart = shiftDateStr(calDragState.initialStopStart, deltaDays);
+    tempEnd = shiftDateStr(calDragState.initialStopEnd, deltaDays);
+  } else if (calDragState.type === 'resize') {
+    if (calDragState.edge === 'left') {
+      tempStart = shiftDateStr(calDragState.initialStopStart, deltaDays);
+      if (tempStart > tempEnd) tempStart = tempEnd;
+    } else {
+      tempEnd = shiftDateStr(calDragState.initialStopEnd, deltaDays);
+      if (tempEnd < tempStart) tempEnd = tempStart;
+    }
+  }
+  
+  // Visual live feedback (updating title text during dragging)
+  calDragState.barEl.title = `${stop.n}\n${formatDateRange(tempStart, tempEnd)} (Guardando...)`;
+});
+
+window.addEventListener('pointerup', e => {
+  if (!calDragState) return;
+  if (e.pointerId !== calDragState.pointerId) return;
+  
+  try {
+    calDragState.barEl.releasePointerCapture(e.pointerId);
+  } catch(err) {}
+  
+  const deltaDays = calDragState.lastDeltaDays || 0;
+  if (deltaDays !== 0) {
+    const stopIdx = calDragState.stopIdx;
+    if (calDragState.type === 'move') {
+      shiftStopDates(stopIdx, deltaDays, true); // True cascades to all subsequent stops!
+    } else if (calDragState.type === 'resize') {
+      if (calDragState.edge === 'left') {
+        resizeStopLeft(stopIdx, deltaDays);
+      } else {
+        resizeStopRight(stopIdx, deltaDays);
+      }
+    }
+  }
+  calDragState = null;
+});
+
+function shiftDateStr(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+function shiftStopDates(stopIdx, deltaDays, shiftSubsequent) {
+  if (deltaDays === 0) return;
+  for (let j = stopIdx; j < state.stops.length; j++) {
+    const s = state.stops[j];
+    if (j === stopIdx || shiftSubsequent) {
+      if (s.start) s.start = shiftDateStr(s.start, deltaDays);
+      if (s.end) s.end = shiftDateStr(s.end, deltaDays);
+    }
+  }
+  save();
+  renderAll();
+}
+
+function resizeStopRight(stopIdx, deltaDays) {
+  if (deltaDays === 0) return;
+  const s = state.stops[stopIdx];
+  const d1 = new Date(s.start + 'T00:00:00');
+  const d2 = new Date(s.end + 'T00:00:00');
+  const currentDuration = Math.round((d2 - d1) / 86400000) + 1;
+  const newDuration = currentDuration + deltaDays;
+  if (newDuration < 1) {
+    deltaDays = 1 - currentDuration;
+  }
+  
+  s.end = shiftDateStr(s.end, deltaDays);
+  
+  // Cascade delta to subsequent stops
+  for (let j = stopIdx + 1; j < state.stops.length; j++) {
+    const sj = state.stops[j];
+    if (sj.start) sj.start = shiftDateStr(sj.start, deltaDays);
+    if (sj.end) sj.end = shiftDateStr(sj.end, deltaDays);
+  }
+  save();
+  renderAll();
+}
+
+function resizeStopLeft(stopIdx, deltaDays) {
+  if (deltaDays === 0) return;
+  const s = state.stops[stopIdx];
+  const d1 = new Date(s.start + 'T00:00:00');
+  const d2 = new Date(s.end + 'T00:00:00');
+  const currentDuration = Math.round((d2 - d1) / 86400000) + 1;
+  const newDuration = currentDuration - deltaDays;
+  if (newDuration < 1) {
+    deltaDays = currentDuration - 1;
+  }
+  
+  s.start = shiftDateStr(s.start, deltaDays);
+  save();
+  renderAll();
+}
+
+function deleteStopFromCalendar(idx) {
+  if (confirm(`¿Borrar "${state.stops[idx].n}" del viaje?`)) {
+    state.stops.splice(idx, 1);
+    calSelectedIdx = -1;
+    save();
+    renderAll();
+  }
 }
 
 function calPrevMonth() {
