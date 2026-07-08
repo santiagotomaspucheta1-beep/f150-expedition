@@ -448,7 +448,7 @@ const CATS = { samy:{t:"🐕 Samy", c:"#6a1b9a"}, auto:{t:"🚙 Auto", c:"#1565c
 
 const DEFAULT_ITEMS = [
  // ---- SAMY ----
- {cat:"samy", name:"Collar GPS", done:false, notes:[{by:"Claude", tx:"Tractive GPS (funciona en EEUU, México y casi toda Latam, requiere suscripción ~USD 5-10/mes) o AirTag como backup barato (no es GPS real, depende de iPhones cerca)."}], links:[{l:"Tractive", u:"https://tractive.com"}]},
+ {cat:"samy", name:"Collar GPS", done:false, notes:[{by:"Claude", tx:"Tractive GPS (funciona en EEUU, México y casi toda Latam, requiere suscripción ~USD 5-10/mes) o AirTag como backup barato (no es GPS real, depende de iPhones cerca)."}], links:[{l:"Tractive", u:"https://tractive.com"},{l:"Amazon (Tractive GPS)", u:"https://www.amazon.com/dp/B08M9DZK2Z"}]},
  {cat:"samy", name:"Escalera para el auto", done:false, notes:[{by:"Claude", tx:"Rampa telescópica o escalera plegable para que suba a la caja/camper sin saltar. Ver capacidad de peso y superficie antideslizante."}], links:[]},
  {cat:"samy", name:"Chaleco", done:false, notes:[], links:[]},
  {cat:"samy", name:"Bowls de comida", done:false, notes:[{by:"Claude", tx:"Plegables de silicona para viaje + uno con base antideslizante para el camper."}], links:[]},
@@ -604,7 +604,7 @@ function migrateStops(stops) {
 }
 
 function migrateItems(state) {
-  if (state.itemsVersion >= 1) return false;
+  if (state.itemsVersion >= 2) return false;
   
   let hasChanges = false;
   const items = state.items || [];
@@ -643,11 +643,11 @@ function migrateItems(state) {
   });
 
   state.items = items;
-  state.itemsVersion = 1;
-  return true; // Force save to persist version 1
+  state.itemsVersion = 2;
+  return true; // Force save to persist version 2
 }
 
-let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 1 };
+let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 2 };
 
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
