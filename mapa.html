@@ -74,7 +74,7 @@
   .modal-btns button { flex:1; padding:10px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
   #m-save { background:#2e7d32; color:#fff; }
   #m-cancel { background:#eceff1; }
-  /* ---- TIMELINE GANTT ---- */
+  /* ---- NUEVO CALENDARIO (REJILLA MENSUAL) ---- */
   #page-cal {
     background: #0d0f14;
     min-height: 100%;
@@ -116,45 +116,158 @@
     align-items: flex-start;
     animation: calFadeIn 0.5s ease;
   }
-  .gantt-wrapper {
+  .calendar-container {
     flex: 1;
-    overflow-x: auto;
     background: #101216;
     border: 1px solid #23272f;
     border-radius: 14px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    padding: 16px;
     min-width: 0;
   }
-  .gantt-wrapper::-webkit-scrollbar { height: 8px; background: #0d0f14; }
-  .gantt-wrapper::-webkit-scrollbar-thumb { background: #2a2f3d; border-radius: 6px; }
-  .gantt-wrapper::-webkit-scrollbar-thumb:hover { background: #3d4455; }
-  .gantt-table { border-collapse: collapse; min-width: 100%; font-size: 12px; color: #c6ccd6; }
-  .gantt-table th, .gantt-table td { user-select: none; }
-  .gantt-row td:first-child { cursor: pointer; transition: color 0.15s; }
-  .gantt-row:hover td:first-child { color: #e8c14b !important; }
-  .gantt-row:hover { background: rgba(255,255,255,0.025); }
-  .gantt-bar {
-    height: 28px;
+  .calendar-nav-header {
     display: flex;
     align-items: center;
-    font-size: 10.5px;
-    font-weight: 700;
-    overflow: hidden;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: filter 0.15s, transform 0.15s;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
-  .gantt-bar:hover { filter: brightness(1.2); transform: scaleY(1.06); }
-  .gantt-bar span { padding: 0 8px; text-shadow: 0 1px 3px rgba(0,0,0,0.6); pointer-events: none; }
-  .today-marker { background: rgba(232,193,75,0.18); }
-  .today-marker::after {
-    content: '';
-    position: absolute;
-    top: 0; bottom: 0;
-    left: 50%;
-    width: 2px;
+  .calendar-month-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .calendar-month-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #e8c14b;
+    min-width: 160px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .calendar-nav-btn {
+    background: #2a2f3d;
+    border: 1px solid #3d4455;
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background 0.15s, color 0.15s;
+    border-style: solid;
+  }
+  .calendar-nav-btn:hover {
     background: #e8c14b;
-    pointer-events: none;
+    color: #101216;
+    border-color: #e8c14b;
+  }
+  .calendar-quick-months {
+    display: flex;
+    gap: 6px;
+  }
+  .calendar-quick-btn {
+    background: #1a1e28;
+    border: 1px solid #2a2f3d;
+    color: #7f8c9d;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s;
+    border-style: solid;
+  }
+  .calendar-quick-btn:hover, .calendar-quick-btn.active {
+    background: rgba(232,193,75,0.12);
+    border-color: #e8c14b;
+    color: #e8c14b;
+  }
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .calendar-day-header {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #7f8c9d;
+    text-transform: uppercase;
+    padding: 8px 0;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #23272f;
+  }
+  .calendar-day-cell {
+    background: #161920;
+    border: 1px solid #23272f;
+    border-radius: 8px;
+    min-height: 95px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: border-color 0.2s, background-color 0.2s;
+  }
+  .calendar-day-cell:hover {
+    border-color: #3d4455;
+    background: #1c202a;
+  }
+  .calendar-day-cell.other-month {
+    background: #0d0f14;
+    border-color: rgba(35,39,47,0.4);
+    opacity: 0.35;
+  }
+  .calendar-day-number {
+    font-size: 12px;
+    font-weight: 700;
+    color: #606878;
+    margin-bottom: 4px;
+    align-self: flex-start;
+  }
+  .calendar-day-cell.today .calendar-day-number {
+    color: #e8c14b;
+    background: rgba(232,193,75,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .calendar-day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .calendar-day-events::-webkit-scrollbar {
+    width: 3px;
+  }
+  .calendar-day-events::-webkit-scrollbar-thumb {
+    background: #2a2f3d;
+    border-radius: 2px;
+  }
+  .calendar-event-pill {
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    padding: 3px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: filter 0.15s, transform 0.1s;
+    user-select: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  }
+  .calendar-event-pill:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+  }
+  .calendar-event-pill.selected {
+    outline: 2px solid #e8c14b;
+    box-shadow: 0 0 8px rgba(232,193,75,0.5);
   }
   /* Detail panel */
   .cal-detail {
@@ -212,6 +325,7 @@
     font-size: 12px;
     font-weight: 700;
     transition: filter 0.15s;
+    border-style: solid;
   }
   .cal-detail-foot button:hover { filter: brightness(1.15); }
   .det-btn-map { background: #1565c0; color: #fff; }
@@ -334,8 +448,9 @@
   <h1>F-150 Expedition Hub</h1>
   <button class="tab-btn active" id="tab-map" onclick="showTab('map')">🗺️ Mapa</button>
   <button class="tab-btn" id="tab-shop" onclick="showTab('shop')">🛒 Compras</button>
+  <button class="tab-btn" id="tab-tramites" onclick="showTab('tramites')">📄 Trámites</button>
   <button class="tab-btn" id="tab-cal" onclick="showTab('cal')">📅 Calendario</button>
-  <button class="tab-btn" style="background:#e8c14b; color:#101216;" onclick="window.open('configurador.html', '_blank')">📐 3D Camper</button>
+  <button class="tab-btn" style="background:#e8c14b; color:#101216;" onclick="window.open('configurador.html', '_blank')">🚙 3D Camper</button>
 </header>
 
 <div id="app">
@@ -381,6 +496,15 @@
         <div class="bar"><div id="prog-bar" style="width:0%"></div></div>
       </div>
       <div id="cats"></div>
+    </div>
+  </div>
+  <div id="page-tramites" style="display:none; height:100%; overflow-y:auto; padding:16px;">
+    <div class="shop-wrap">
+      <div class="progress">
+        <b>Progreso de trámites:</b> <span id="prog-txt-tramites"></span>
+        <div class="bar"><div id="prog-bar-tramites" style="width:0%"></div></div>
+      </div>
+      <div id="cats-tramites"></div>
     </div>
   </div>
   <div id="page-cal" style="display:none; height:100%; overflow-y:auto;"></div>
@@ -454,9 +578,9 @@ const DEFAULT_ITEMS = [
  {cat:"samy", name:"Bowls de comida", done:false, notes:[{by:"Claude", tx:"Plegables de silicona para viaje + uno con base antideslizante para el camper."}], links:[]},
  {cat:"samy", name:"Canil", done:false, notes:[{by:"Claude", tx:"Si va en ferry probablemente exijan kennel rígido aprobado IATA. Comprarlo pensando en el ferry La Paz y posibles tramos aéreos."}], links:[]},
  // ---- AUTO ----
- {cat:"auto", name:"Pantalla / tablero (CarPlay no anda)", done:false, notes:[{by:"Claude", tx:"Que es el USB hub: es un modulo chico dentro del tablero (parte del sistema Sync 3) que gestiona las conexiones USB, incluido CarPlay. En muchas F-150 2015-2020 esa pieza falla con el tiempo y CarPlay deja de conectar aunque el resto de Sync 3 funcione bien. Es una falla comun y muy barata de arreglar: NO hay que cambiar la pantalla entera, se compra un adaptador/modulo de reemplazo y se enchufa en el lugar del original (detras de la pantalla o consola), sin herramientas especiales, unos 10-15 min. Probar esto ANTES de gastar en pantalla nueva o head unit aftermarket (10-20x mas caro)."}], links:[{l:"Adaptador USB hub Sync 2 a Sync 3 (Bestycar, ~USD 25, pick de Amazon)", u:"https://www.amazon.com/Bestycar-Harness-Adapter-Compatible-Mutimedia/dp/B07SGR8YCW/"},{l:"Modulo OEM Ford USB hub HC3Z-19A387-H (~USD 126, alternativa oficial)", u:"https://www.amazon.com/s?k=OEM+Ford+Carplay+USB+Hub+Module+HC3Z-19A387-H"}]},
+ {cat:"auto", name:"Pantalla / tablero (CarPlay no anda)", done:false, notes:[{by:"Claude", tx:"Que es el USB hub: es un modulo chico dentro del tablero (parte del sistema Sync 3) que gestiona las conexiones USB, incluido CarPlay. En muchas F-150 2015-2020 esa pieza falla con el tiempo y CarPlay deja de conectar aunque el resto de Sync 3 funcione bien. Es una falla comun y muy barata de arreglar: NO hay que cambiar la pantalla entera, se compra un adaptador/modulo de reemplazo y se enchufa en el lugar del original (detras de la pantalla o consola), sin herramientas especiales, unos 10-15 min. Probar esto ANTES de gastar en pantalla nueva o head unit aftermarket (10-20x mas caro)."},{by:"Claude", tx:"Actualizacion 2026-07-08: la pantalla ACTUALMENTE instalada (foto del tablero) no es la unidad rota TS10 descripta en la nota de abajo -- es otra pantalla distinta, todavia sin identificar, que anda con Android Auto pero no con CarPlay y tampoco muestra la camara de retroceso (aunque la camara fisica ya esta instalada en el porton). La unidad TS10 con el vidrio roto es una pantalla de REPUESTO que entrego el vendedor de la camioneta -- aparentemente la que estaba instalada antes de que alguien la cambiara por la actual. Antes de comprar algo nuevo: (1) identificar que pantalla es la instalada ahora (sacar el marco del tablero y mirar la etiqueta/modelo detras) para saber si tiene entrada de camara sin usar o si CarPlay esta simplemente desactivado en su configuracion; (2) cotizar arreglar solo el VIDRIO/digitizer de la unidad TS10 de repuesto -- kits de reemplazo de touchscreen para head units Android rondan USD 50-150 (vs. USD 700-1800 de una unidad nueva); si la placa de esa unidad funciona bien y ya tiene cableados camara+CarPlay, cambiando solo el vidrio roto se resuelve todo junto. Confirmar con un instalador que el conector de la TS10 sea compatible con el arnes actual antes de gastar en el vidrio."}], links:[{l:"Adaptador USB hub Sync 2 a Sync 3 (Bestycar, ~USD 25, pick de Amazon)", u:"https://www.amazon.com/Bestycar-Harness-Adapter-Compatible-Mutimedia/dp/B07SGR8YCW/"},{l:"Modulo OEM Ford USB hub HC3Z-19A387-H (~USD 126, alternativa oficial)", u:"https://www.amazon.com/s?k=OEM+Ford+Carplay+USB+Hub+Module+HC3Z-19A387-H"},{l:"Kit reemplazo touchscreen/digitizer para head unit Android 10.1\\\"", u:"https://www.amazon.com/Capacitive-Replacement-Android-Navigation-Systems/dp/B0DP2N75NS"}]},
  {cat:"auto", name:"Portón automático", done:false, notes:[{by:"Claude", tx:"Para 2015-2020 no existe un kit todo-en-uno simple de apertura/cierre electrico (a diferencia de camionetas mas nuevas). Opciones reales: (a) Electric-Life Power Tailgate Lift Kit (~USD 431 en Summit Racing), motoriza el movimiento pero no es plug-and-play, requiere adaptar cableado; (b) amortiguador a gas tipo Tailgate Assist (~USD 60-100), solo frena la caida, no abre solo, mas simple y barato; (c) portón motorizado de una F-150 de desarmadero + programacion FORSCAN, mas barato en piezas pero requiere mano de obra especializada. Ninguna es DIY rapida - conviene resolverlo con un instalador en Denver (bloque 6), ultima ciudad grande antes de Mexico."}], links:[{l:"Buscar tailgate assist / power tailgate F150 en Amazon", u:"https://www.amazon.com/s?k=f150+tailgate+assist"}]},
- {cat:"auto", name:"Cámara y sensores de retroceso", done:false, notes:[{by:"Claude", tx:"Como el canopy tapa la vista trasera por el espejo, la solucion mas practica es reemplazar el espejo retrovisor por uno con pantalla integrada (sistema aparte, no depende de la decision de la pantalla del tablero). AUTO-VOX T2 (4.3 pulgadas, cable, buena vision nocturna, ~USD 140) es el mas simple; AUTO-VOX T9 (9.35 pulgadas, touch, ~USD 190) si quieren mas superficie de imagen. Se instala clip-on sobre el espejo actual, camara con cable en la punta de la caja/porton. Si mas adelante ponen head unit grande en el tablero, ahi se puede sumar una segunda camara, pero el espejo resuelve el problema ya sin esperar esa decision."}], links:[{l:"AUTO-VOX T2 rear view mirror camera (~USD 140)", u:"https://www.amazon.com/s?k=auto-vox+t2+rear+view+mirror+camera"},{l:"AUTO-VOX T9 (pantalla mas grande, ~USD 190)", u:"https://www.amazon.com/s?k=auto-vox+t9+rear+view+mirror+camera"}]},
+ {cat:"auto", name:"Cámara y sensores de retroceso", done:false, notes:[{by:"Claude", tx:"Como el canopy tapa la vista trasera por el espejo, la solucion mas practica es reemplazar el espejo retrovisor por uno con pantalla integrada (sistema aparte, no depende de la decision de la pantalla del tablero). AUTO-VOX T2 (4.3 pulgadas, cable, buena vision nocturna, ~USD 140) es el mas simple; AUTO-VOX T9 (9.35 pulgadas, touch, ~USD 190) si quieren mas superficie de imagen. Se instala clip-on sobre el espejo actual, camara con cable en la punta de la caja/porton. Si mas adelante ponen head unit grande en el tablero, ahi se puede sumar una segunda camara, pero el espejo resuelve el problema ya sin esperar esa decision."},{by:"Claude", tx:"Actualizacion 2026-07-08: confirmado que la camara de retroceso YA ESTA instalada fisicamente en el porton -- no hay que comprar camara nueva. El problema es solo que ninguna pantalla actual la muestra. Antes de comprar el espejo AUTO-VOX, conviene primero resolver la pantalla del tablero (ver item de arriba): si se repara/instala una unidad que acepte la entrada de video de esta camara existente, el problema se resuelve sin gastar en un sistema aparte. El AUTO-VOX queda como plan B solo si ninguna opcion de pantalla del tablero termina soportando esa entrada de camara."}], links:[{l:"AUTO-VOX T2 rear view mirror camera (~USD 140)", u:"https://www.amazon.com/s?k=auto-vox+t2+rear+view+mirror+camera"},{l:"AUTO-VOX T9 (pantalla mas grande, ~USD 190)", u:"https://www.amazon.com/s?k=auto-vox+t9+rear+view+mirror+camera"}]},
  {cat:"auto", name:"Bolsitas para los zapatos", done:false, notes:[{by:"Claude", tx:"2 bolsas individuales (una por persona) que encierren el calzado completo, para separar barro/arena/humedad de la ropa. Knack Compressible Shoe Bag o Nomatic Shoe Cube tienen correa de compresion y son las mejor valoradas. Alternativa barata: IKEA PARKLA (~USD 3 c/u) si el presupuesto pesa mas que la durabilidad."}], links:[{l:"Shoe bags para viaje (comparar Knack / Nomatic / IKEA PARKLA)", u:"https://www.amazon.com/s?k=shoe+bag+travel+organizer+dirty+shoes"}]},
  {cat:"auto", name:"Organizadores", done:false, notes:[{by:"Claude", tx:"Dos caminos segun presupuesto. Entrada: Plano Storage Trunk 108qt con ruedas (~USD 39, 4.6 estrellas, best seller) - simple y resistente para ropa/comida/uso general; comprar 2-3 y ver como entran en la caja con el canopy antes de invertir mas. Sistema modular: Front Runner Wolf Pack Pro + drawer kit, cajones deslizables con cajas removibles pensado para overlanding, mucho mas robusto pero cuesta varios cientos de USD y hay que medir el espacio exacto primero. Sugerencia: arrancar con Plano ahora; si hace falta upgrade, hacerlo en Denver (bloque 6) donde hay tiendas de overlanding."}], links:[{l:"Plano Storage Trunk 108qt con ruedas (~USD 39)", u:"https://www.amazon.com/s?k=plano+stackable+storage+trunk+truck+bed"},{l:"Front Runner Wolf Pack drawer kit (sistema modular)", u:"https://gtfoverland.com/products/front-runner-drawer-kit"}]},
  {cat:"auto", name:"Bolsas de compresión", done:false, notes:[{by:"Claude", tx:"Para ropa (de ambos): cubos de compresion con correa/cierre (packing cubes), no bolsas al vacio (necesitan bomba y se rompen con el uso constante en ruta). Un set con varios tamaños, uno por persona + uno aparte para ropa sucia. Para bolsas de dormir/mantas: bolsas de compresion con correas tipo trekking, elegir tamaño segun el saco de dormir que compren."}], links:[{l:"Sets de compression packing cubes para viaje", u:"https://www.amazon.com/s?k=compression+packing+cubes+set+travel"}]},
@@ -604,7 +728,7 @@ function migrateStops(stops) {
 }
 
 function migrateItems(state) {
-  if (state.itemsVersion >= 2) return false;
+  if (state.itemsVersion >= 3) return false;
   
   let hasChanges = false;
   const items = state.items || [];
@@ -643,11 +767,11 @@ function migrateItems(state) {
   });
 
   state.items = items;
-  state.itemsVersion = 2;
-  return true; // Force save to persist version 2
+  state.itemsVersion = 3;
+  return true; // Force save to persist version 3
 }
 
-let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 2 };
+let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3 };
 
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
@@ -713,12 +837,17 @@ function resetData(){
 function showTab(t){
   document.getElementById("page-map").style.display = t==="map" ? "flex" : "none";
   document.getElementById("page-shop").style.display = t==="shop" ? "block" : "none";
+  document.getElementById("page-tramites").style.display = t==="tramites" ? "block" : "none";
   document.getElementById("page-cal").style.display = t==="cal" ? "block" : "none";
+  
   document.getElementById("tab-map").classList.toggle("active", t==="map");
   document.getElementById("tab-shop").classList.toggle("active", t==="shop");
+  document.getElementById("tab-tramites").classList.toggle("active", t==="tramites");
   document.getElementById("tab-cal").classList.toggle("active", t==="cal");
+  
   if(t==="map") setTimeout(()=>map.invalidateSize(), 60);
   if(t==="cal") renderCalendar();
+  if(t==="shop" || t==="tramites") renderShop();
 }
 
 /* ================= MAPA ================= */
@@ -1181,13 +1310,35 @@ function saveModal(){
 
 /* ================= COMPRAS ================= */
 function renderShop(){
-  const wrap = document.getElementById("cats");
-  wrap.innerHTML = "";
-  const total = state.items.length, done = state.items.filter(x=>x.done).length;
-  document.getElementById("prog-txt").textContent = done+" de "+total+" comprados";
-  document.getElementById("prog-bar").style.width = (total? Math.round(done/total*100):0)+"%";
+  // — 1. COMPRAS (Excluding tramites) —
+  const wrapShop = document.getElementById("cats");
+  if (wrapShop) {
+    const shopItems = state.items.filter(x => x.cat !== 'tramites');
+    const totalShop = shopItems.length, doneShop = shopItems.filter(x=>x.done).length;
+    document.getElementById("prog-txt").textContent = doneShop+" de "+totalShop+" comprados";
+    document.getElementById("prog-bar").style.width = (totalShop? Math.round(doneShop/totalShop*100):0)+"%";
+    
+    wrapShop.innerHTML = "";
+    const shopCats = { samy: CATS.samy, auto: CATS.auto, nosotros: CATS.nosotros };
+    renderCategories(shopCats, wrapShop);
+  }
 
-  Object.keys(CATS).forEach(ck=>{
+  // — 2. TRÁMITES (Only tramites) —
+  const wrapTramites = document.getElementById("cats-tramites");
+  if (wrapTramites) {
+    const tramitesItems = state.items.filter(x => x.cat === 'tramites');
+    const totalTramites = tramitesItems.length, doneTramites = tramitesItems.filter(x=>x.done).length;
+    document.getElementById("prog-txt-tramites").textContent = doneTramites+" de "+totalTramites+" completados";
+    document.getElementById("prog-bar-tramites").style.width = (totalTramites? Math.round(doneTramites/totalTramites*100):0)+"%";
+    
+    wrapTramites.innerHTML = "";
+    const tramitesCats = { tramites: CATS.tramites };
+    renderCategories(tramitesCats, wrapTramites);
+  }
+}
+
+function renderCategories(catsObj, container) {
+  Object.keys(catsObj).forEach(ck=>{
     const cat = CATS[ck];
     const div = document.createElement("div");
     div.className = "cat";
@@ -1218,7 +1369,7 @@ function renderShop(){
     add.className = "add-item";
     add.innerHTML = "<input placeholder='Agregar ítem a "+cat.t.replace(/^[^ ]+ /,"")+"…' onkeydown='if(event.key===\"Enter\")addItem(\""+ck+"\",this)'><button onclick='addItem(\""+ck+"\", this.previousElementSibling)'>＋</button>";
     div.appendChild(add);
-    wrap.appendChild(div);
+    container.appendChild(div);
   });
 }
 function toggleItem(i){ state.items[i].done = !state.items[i].done; save(); renderShop(); }
@@ -1254,8 +1405,9 @@ function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
 
 function renderAll(){ renderMap(); renderShop(); if (document.getElementById("page-cal").style.display !== "none") renderCalendar(); }
 
-/* ================= CALENDARIO (GANTT) ================= */
+/* ================= CALENDARIO (REJILLA MENSUAL) ================= */
 let calSelectedIdx = -1;
+let calCurrentDate = new Date(2026, 7, 1); // Agosto 2026
 
 function renderCalendar() {
   const container = document.getElementById("page-cal");
@@ -1267,48 +1419,18 @@ function renderCalendar() {
 
   // — Stats —
   const stopsWithDates = stops.filter(s => s.start && s.end);
-  const totalDuration = stopsWithDates.reduce((acc, s) => {
-    const d1 = new Date(s.start + 'T00:00:00'), d2 = new Date(s.end + 'T00:00:00');
-    return acc + Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
-  }, 0);
   const allStarts = stopsWithDates.map(s => new Date(s.start + 'T00:00:00'));
   const allEnds   = stopsWithDates.map(s => new Date(s.end   + 'T00:00:00'));
   let globalMin = allStarts.length ? new Date(Math.min(...allStarts)) : new Date('2026-08-10T00:00:00');
   let globalMax = allEnds.length   ? new Date(Math.max(...allEnds))   : new Date('2026-10-15T00:00:00');
-  const tripDays = Math.round((globalMax - globalMin) / 86400000) + 1;
+  const tripDays = allStarts.length && allEnds.length ? Math.round((globalMax - globalMin) / 86400000) + 1 : 0;
 
-  // — Day list —
-  const padMin = new Date(globalMin); padMin.setDate(padMin.getDate() - 1);
-  const padMax = new Date(globalMax); padMax.setDate(padMax.getDate() + 3);
-  const dayList = [];
-  let cur = new Date(padMin);
-  while (cur <= padMax) { dayList.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
+  const year = calCurrentDate.getFullYear();
+  const month = calCurrentDate.getMonth(); // 0-11
 
-  const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
   const fullMonths = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const days  = ["Do","Lu","Ma","Mi","Ju","Vi","Sá"];
-
-  // — Build month spans —
-  const monthSpans = [];
-  let lastM = -1;
-  dayList.forEach((d, i) => {
-    const m = d.getMonth();
-    if (m !== lastM) { monthSpans.push({ name: fullMonths[m], start: i, span: 1 }); lastM = m; }
-    else monthSpans[monthSpans.length-1].span++;
-  });
-
-  // — Build stop index maps —
-  const stopDayMap = stops.map(s => {
-    let si = -1, ei = -1;
-    if (s.start && s.end) {
-      dayList.forEach((d, i) => {
-        const ds = d.toISOString().split('T')[0];
-        if (ds === s.start) si = i;
-        if (ds === s.end)   ei = i;
-      });
-    }
-    return { si, ei };
-  });
+  const months = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
   // ── Stats bar ─────────────────────────────────────────
   let html = `<div class="cal-stats">
@@ -1321,80 +1443,101 @@ function renderCalendar() {
   // ── Layout ────────────────────────────────────────────
   html += `<div class="cal-layout">`;
 
-  // ── Gantt table ───────────────────────────────────────
-  html += `<div class="gantt-wrapper"><table class="gantt-table">`;
+  // ── Calendar Grid Container ───────────────────────────
+  html += `<div class="calendar-container">`;
 
-  // Month row
-  html += `<thead><tr style="background:#12151c; height:36px; border-bottom:1px solid #23272f;">`;
-  html += `<th style="position:sticky;left:0;background:#12151c;z-index:11;min-width:220px;max-width:220px;padding:0 16px;text-align:left;border-right:2px solid #2a2f3d;color:#f8fafc;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">Parada</th>`;
-  monthSpans.forEach(ms => {
-    html += `<th colspan="${ms.span}" style="border-right:1px solid #23272f;text-align:center;color:#e8c14b;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:8px 4px;">${ms.name}</th>`;
+  // Navigation Header
+  html += `<div class="calendar-nav-header">`;
+  
+  html += `<div class="calendar-month-selector">`;
+  html += `<button class="calendar-nav-btn" onclick="calPrevMonth()">◀</button>`;
+  html += `<div class="calendar-month-title">${fullMonths[month]} ${year}</div>`;
+  html += `<button class="calendar-nav-btn" onclick="calNextMonth()">▶</button>`;
+  html += `</div>`;
+
+  html += `<div class="calendar-quick-months">`;
+  const quicks = [
+    { name: "Agosto", y: 2026, m: 7 },
+    { name: "Septiembre", y: 2026, m: 8 },
+    { name: "Octubre", y: 2026, m: 9 }
+  ];
+  quicks.forEach(q => {
+    const activeClass = (year === q.y && month === q.m) ? 'active' : '';
+    html += `<button class="calendar-quick-btn ${activeClass}" onclick="calSetMonth(${q.y}, ${q.m})">${q.name}</button>`;
   });
-  html += `</tr>`;
+  html += `</div>`;
 
-  // Day row
-  html += `<tr style="background:#0e1016;height:30px;border-bottom:2px solid #23272f;">`;
-  html += `<th style="position:sticky;left:0;background:#0e1016;z-index:11;border-right:2px solid #2a2f3d;"></th>`;
-  dayList.forEach(d => {
-    const isTod = d.toISOString().split('T')[0] === todayStr;
-    const isWE  = d.getDay()===0 || d.getDay()===6;
-    const bg = isTod ? 'background:#e8c14b22;' : isWE ? 'background:#13151c;' : '';
-    const col = isTod ? 'color:#e8c14b;font-weight:900;' : isWE ? 'color:#4a5568;' : 'color:#606878;';
-    html += `<th style="border-right:1px solid #1a1d24;min-width:30px;width:30px;text-align:center;font-size:10px;font-weight:700;padding:4px 2px;${bg}${col}" title="${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}">${d.getDate()}</th>`;
+  html += `</div>`; // navigation-header
+
+  // Grid start
+  html += `<div class="calendar-grid">`;
+
+  // Day names headers
+  dayNames.forEach(dName => {
+    html += `<div class="calendar-day-header">${dName}</div>`;
   });
-  html += `</tr></thead>`;
 
-  // Body rows
-  html += `<tbody>`;
-  stops.forEach((s, idx) => {
-    const { si, ei } = stopDayMap[idx];
-    const isSel = idx === calSelectedIdx;
-    const rowBg = isSel ? 'background:rgba(232,193,75,0.07);' : '';
-    const cVal = color(s);
-    const dur  = (si !== -1 && ei !== -1) ? (ei - si + 1) : 0;
+  // Calculate days in month and padding
+  // Monday start: getDay() returns 0 for Sunday, 1 for Monday, etc.
+  const firstDayIndexRaw = new Date(year, month, 1).getDay();
+  const firstDayIndex = firstDayIndexRaw === 0 ? 6 : firstDayIndexRaw - 1; // Convert Sunday=0 to index=6, and Monday=1 to index=0
+  
+  const numDays = new Date(year, month + 1, 0).getDate();
+  const prevNumDays = new Date(year, month, 0).getDate();
 
-    html += `<tr class="gantt-row" style="border-bottom:1px solid #161920;height:44px;${rowBg}transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='${isSel?'rgba(232,193,75,0.07)':'transparent'}'">`;
-    
-    // Label cell
-    html += `<td onclick="calSelectStop(${idx})" style="position:sticky;left:0;z-index:10;background:${isSel?'#16181f':'#101216'};min-width:220px;max-width:220px;padding:0 14px;border-right:2px solid #2a2f3d;cursor:pointer;transition:background .12s;">`;
-    html += `<div style="display:flex;align-items:center;gap:8px;height:44px;">`;
-    html += `<span style="width:8px;height:8px;border-radius:50%;background:${cVal};flex-shrink:0;box-shadow:0 0 6px ${cVal}55;"></span>`;
-    html += `<div style="min-width:0;"><div style="font-size:12px;font-weight:${isSel?'800':'600'};color:${isSel?'#e8c14b':'#e2e8f0'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${idx+1}. ${s.n}</div>`;
-    if (dur > 0) html += `<div style="font-size:10px;color:#5a6476;margin-top:1px;">${formatDateRange(s.start,s.end)} · ${dur}d</div>`;
-    html += `</div></div></td>`;
+  // Prev month padding cells
+  for (let i = firstDayIndex - 1; i >= 0; i--) {
+    const prevDay = prevNumDays - i;
+    html += `<div class="calendar-day-cell other-month">`;
+    html += `<div class="calendar-day-number">${prevDay}</div>`;
+    html += `</div>`;
+  }
 
-    // Day cells
-    dayList.forEach((d, dIdx) => {
-      const dStr  = d.toISOString().split('T')[0];
-      const isTod = dStr === todayStr;
-      const isWE  = d.getDay()===0||d.getDay()===6;
-      const inBar = si !== -1 && ei !== -1 && dIdx >= si && dIdx <= ei;
-      const isS   = dIdx === si;
-      const isE   = dIdx === ei;
+  // Current month days
+  for (let d = 1; d <= numDays; d++) {
+    const currentDayDate = new Date(year, month, d);
+    const dateStr = currentDayDate.toISOString().split('T')[0];
+    const isToday = dateStr === todayStr;
 
-      let cellBg = isTod ? 'background:#e8c14b10;' : isWE ? 'background:#0f1116;' : '';
-      let todayLine = isTod ? `<div style="position:absolute;top:0;bottom:0;left:50%;width:1.5px;background:#e8c14b55;pointer-events:none;"></div>` : '';
+    let cellClass = 'calendar-day-cell';
+    if (isToday) cellClass += ' today';
 
-      let barHtml = '';
-      if (inBar) {
-        const br = isS && isE ? '8px' : isS ? '8px 0 0 8px' : isE ? '0 8px 8px 0' : '0';
-        barHtml = `<div class="gantt-bar" onclick="calSelectStop(${idx})" style="border-radius:${br};background:linear-gradient(135deg,${cVal}ee,${cVal}aa);box-shadow:0 2px 8px ${cVal}44;" title="${s.n}\n${formatDateRange(s.start,s.end)} (${dur}d)">`;
-        if (isS) barHtml += `<span>${s.n.split('—')[0].split('/')[0].split(',')[0].trim()}</span>`;
-        barHtml += `</div>`;
+    html += `<div class="${cellClass}" onclick="calSelectStop(-1)">`;
+    html += `<div class="calendar-day-number">${d}</div>`;
+    html += `<div class="calendar-day-events">`;
+
+    // Find active stops on this day
+    stops.forEach((s, idx) => {
+      if (s.start && s.end && dateStr >= s.start && dateStr <= s.end) {
+        const isSel = idx === calSelectedIdx;
+        const cVal = color(s);
+        const selectedClass = isSel ? 'selected' : '';
+        html += `<div class="calendar-event-pill ${selectedClass}" onclick="event.stopPropagation();calSelectStop(${idx})" style="background:${cVal};" title="${s.n}\n${formatDateRange(s.start, s.end)}">${idx + 1}. ${s.n}</div>`;
       }
-
-      html += `<td style="border-right:1px solid #161920;padding:2px 0;position:relative;${cellBg}">${todayLine}${barHtml}</td>`;
     });
-    html += `</tr>`;
-  });
-  html += `</tbody></table></div>`; // gantt-wrapper
+
+    html += `</div>`; // day-events
+    html += `</div>`; // day-cell
+  }
+
+  // Next month padding cells to complete the grid
+  const totalCellsSoFar = firstDayIndex + numDays;
+  const nextMonthCells = (7 - (totalCellsSoFar % 7)) % 7;
+  for (let d = 1; d <= nextMonthCells; d++) {
+    html += `<div class="calendar-day-cell other-month">`;
+    html += `<div class="calendar-day-number">${d}</div>`;
+    html += `</div>`;
+  }
+
+  html += `</div>`; // calendar-grid
+  html += `</div>`; // calendar-container
 
   // ── Detail panel ─────────────────────────────────────
   const det = calSelectedIdx >= 0 ? stops[calSelectedIdx] : null;
   html += `<div class="cal-detail${det ? '' : ' hidden'}" id="cal-detail">`;
   if (det) {
-    const { si, ei } = stopDayMap[calSelectedIdx];
-    const dur = (si !== -1 && ei !== -1) ? (ei - si + 1) : 0;
+    const d1 = new Date(det.start + 'T00:00:00'), d2 = new Date(det.end + 'T00:00:00');
+    const dur = Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
     const cVal = color(det);
     html += `<div style="height:5px;background:linear-gradient(90deg,${cVal},${cVal}77);"></div>`;
     html += `<div class="cal-detail-header">`;
@@ -1418,7 +1561,7 @@ function renderCalendar() {
     html += `</div>`;
   } else {
     html += `<div style="padding:40px 20px;text-align:center;color:#3d4455;">`;
-    html += `<div style="font-size:32px;margin-bottom:12px;">👆</div>`;
+    html += `<div style="font-size:32px;margin-bottom:12px;">📅</div>`;
     html += `<div style="font-size:13px;font-weight:600;color:#4a5568;">Clic en una parada<br>para ver detalles</div>`;
     html += `</div>`;
   }
@@ -1426,6 +1569,21 @@ function renderCalendar() {
 
   html += `</div>`; // cal-layout
   container.innerHTML = html;
+}
+
+function calPrevMonth() {
+  calCurrentDate.setMonth(calCurrentDate.getMonth() - 1);
+  renderCalendar();
+}
+
+function calNextMonth() {
+  calCurrentDate.setMonth(calCurrentDate.getMonth() + 1);
+  renderCalendar();
+}
+
+function calSetMonth(y, m) {
+  calCurrentDate = new Date(y, m, 1);
+  renderCalendar();
 }
 
 function calSelectStop(idx) {
@@ -1444,11 +1602,13 @@ function focusStopOnMap(idx) {
   }
 }
 
-// Controlar pestaña visible por medio del hash de la URL (#mapa, #compras o #calendario)
+// Controlar pestaña visible por medio del hash de la URL (#mapa, #compras, #tramites o #calendario)
 function checkHashTab() {
   const h = window.location.hash;
   if (h === '#compras' || h === '#shop') {
     showTab('shop');
+  } else if (h === '#tramites') {
+    showTab('tramites');
   } else if (h === '#cal' || h === '#calendario' || h === '#calendar') {
     showTab('cal');
   } else {
