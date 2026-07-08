@@ -74,12 +74,13 @@
   .modal-btns button { flex:1; padding:10px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; }
   #m-save { background:#2e7d32; color:#fff; }
   #m-cancel { background:#eceff1; }
-  /* ---- NUEVO CALENDARIO (REJILLA MENSUAL) ---- */
+  /* ---- NUEVO CALENDARIO DE VIAJE (LIGHT THEME & MULTI-DAY SPAN) ---- */
   #page-cal {
-    background: #0d0f14;
+    background: #f4f4f2;
     min-height: 100%;
     padding: 20px;
     font-family: system-ui, -apple-system, sans-serif;
+    color: #1e293b;
   }
   .cal-stats {
     display: flex;
@@ -89,247 +90,262 @@
     animation: calFadeIn 0.4s ease;
   }
   .cal-stat-card {
-    background: linear-gradient(135deg, #161920 0%, #1a1e28 100%);
-    border: 1px solid #2a2f3d;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 14px 20px;
     min-width: 140px;
     flex: 1;
     text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
   .cal-stat-card .val {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 800;
-    color: #e8c14b;
+    color: #1565c0;
     line-height: 1;
   }
   .cal-stat-card .lbl {
-    font-size: 11px;
-    color: #7f8c9d;
+    font-size: 12px;
+    color: #64748b;
     margin-top: 4px;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    font-weight: 600;
   }
   .cal-layout {
     display: flex;
-    gap: 16px;
+    gap: 20px;
     align-items: flex-start;
     animation: calFadeIn 0.5s ease;
   }
   .calendar-container {
     flex: 1;
-    background: #101216;
-    border: 1px solid #23272f;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
-    padding: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 20px;
     min-width: 0;
   }
   .calendar-nav-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
     gap: 12px;
   }
   .calendar-month-selector {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
   }
   .calendar-month-title {
-    font-size: 16px;
+    font-size: 20px;
     font-weight: 800;
-    color: #e8c14b;
-    min-width: 160px;
+    color: #1e293b;
+    min-width: 180px;
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   .calendar-nav-btn {
-    background: #2a2f3d;
-    border: 1px solid #3d4455;
-    color: #f8fafc;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #334155;
     border-radius: 8px;
-    padding: 6px 12px;
+    padding: 8px 16px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
-    transition: background 0.15s, color 0.15s;
+    transition: all 0.15s;
     border-style: solid;
   }
   .calendar-nav-btn:hover {
-    background: #e8c14b;
-    color: #101216;
-    border-color: #e8c14b;
+    background: #f1f5f9;
+    border-color: #94a3b8;
   }
   .calendar-quick-months {
     display: flex;
-    gap: 6px;
+    gap: 8px;
   }
   .calendar-quick-btn {
-    background: #1a1e28;
-    border: 1px solid #2a2f3d;
-    color: #7f8c9d;
-    border-radius: 6px;
-    padding: 5px 10px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    border-radius: 8px;
+    padding: 6px 14px;
     cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     transition: all 0.15s;
     border-style: solid;
   }
   .calendar-quick-btn:hover, .calendar-quick-btn.active {
-    background: rgba(232,193,75,0.12);
-    border-color: #e8c14b;
-    color: #e8c14b;
+    background: #1565c0;
+    border-color: #1565c0;
+    color: #ffffff;
   }
-  .calendar-grid {
+  .calendar-grid-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
+    gap: 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 8px;
   }
   .calendar-day-header {
     text-align: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: #7f8c9d;
+    font-size: 13px;
+    font-weight: 800;
+    color: #475569;
     text-transform: uppercase;
-    padding: 8px 0;
+    padding: 10px 0;
     letter-spacing: 0.05em;
-    border-bottom: 2px solid #23272f;
   }
-  .calendar-day-cell {
-    background: #161920;
-    border: 1px solid #23272f;
-    border-radius: 8px;
-    min-height: 95px;
-    padding: 6px;
-    display: flex;
-    flex-direction: column;
+  
+  /* Estilos para las filas de semanas */
+  .calendar-week-row {
     position: relative;
-    transition: border-color 0.2s, background-color 0.2s;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    overflow: hidden;
   }
-  .calendar-day-cell:hover {
-    border-color: #3d4455;
-    background: #1c202a;
+  .calendar-week-bg {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
   }
-  .calendar-day-cell.other-month {
-    background: #0d0f14;
-    border-color: rgba(35,39,47,0.4);
-    opacity: 0.35;
+  .calendar-week-bg-cell {
+    border-right: 1px solid #f1f5f9;
+    height: 100%;
   }
-  .calendar-day-number {
-    font-size: 12px;
-    font-weight: 700;
-    color: #606878;
-    margin-bottom: 4px;
-    align-self: flex-start;
+  .calendar-week-bg-cell:last-child {
+    border-right: none;
   }
-  .calendar-day-cell.today .calendar-day-number {
-    color: #e8c14b;
-    background: rgba(232,193,75,0.15);
+  .calendar-week-bg-cell.other-month {
+    background: #f8fafc;
+  }
+  .calendar-week-content {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: 32px;
+    grid-auto-rows: minmax(28px, auto);
+    padding-bottom: 6px;
+  }
+  .calendar-day-num-wrapper {
+    padding: 6px 8px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #64748b;
+    align-self: center;
+  }
+  .calendar-day-num-wrapper.today {
+    color: #1565c0;
+  }
+  .calendar-day-num-wrapper.today span {
+    background: rgba(21,101,192,0.1);
     padding: 2px 6px;
     border-radius: 4px;
   }
-  .calendar-day-events {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    overflow-y: auto;
-    flex: 1;
-  }
-  .calendar-day-events::-webkit-scrollbar {
-    width: 3px;
-  }
-  .calendar-day-events::-webkit-scrollbar-thumb {
-    background: #2a2f3d;
-    border-radius: 2px;
-  }
-  .calendar-event-pill {
-    font-size: 10px;
+  
+  /* Pastillas de paradas */
+  .calendar-event-bar {
+    font-size: 12px;
     font-weight: 700;
     color: #fff;
-    padding: 3px 6px;
-    border-radius: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: filter 0.15s, transform 0.1s;
     user-select: none;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    margin: 3px 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
-  .calendar-event-pill:hover {
-    filter: brightness(1.2);
-    transform: translateY(-1px);
+  .calendar-event-bar:hover {
+    filter: brightness(1.1);
+    transform: scale(1.01);
   }
-  .calendar-event-pill.selected {
-    outline: 2px solid #e8c14b;
-    box-shadow: 0 0 8px rgba(232,193,75,0.5);
+  .calendar-event-bar.selected {
+    outline: 3px solid #f59e0b;
+    box-shadow: 0 0 10px rgba(245,158,11,0.5);
   }
+  
   /* Detail panel */
   .cal-detail {
-    width: 260px;
+    width: 280px;
     flex-shrink: 0;
-    background: linear-gradient(160deg, #161920 0%, #1a1e28 100%);
-    border: 1px solid #2a2f3d;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     transition: opacity 0.25s, transform 0.25s;
   }
   .cal-detail.hidden { opacity: 0; transform: translateX(12px); pointer-events: none; }
   .cal-detail-header {
-    padding: 16px 18px 12px;
-    border-bottom: 1px solid #23272f;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #e2e8f0;
   }
   .cal-detail-header .det-num {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    color: #7f8c9d;
+    color: #64748b;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     margin-bottom: 4px;
   }
   .cal-detail-header .det-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #f8fafc;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e293b;
     line-height: 1.3;
   }
-  .cal-detail-body { padding: 14px 18px; }
+  .cal-detail-body { padding: 16px 20px; }
   .cal-detail-row {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 12px;
-    font-size: 12.5px;
+    gap: 12px;
+    margin-bottom: 14px;
+    font-size: 13.5px;
   }
-  .cal-detail-row .det-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
-  .cal-detail-row .det-text { color: #c6ccd6; line-height: 1.4; }
-  .cal-detail-row .det-text strong { color: #f8fafc; display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #7f8c9d; margin-bottom: 1px; }
+  .cal-detail-row .det-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .cal-detail-row .det-text { color: #334155; line-height: 1.4; }
+  .cal-detail-row .det-text strong { color: #64748b; display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
   .cal-detail-foot {
-    padding: 12px 18px;
-    border-top: 1px solid #1a1d24;
+    padding: 14px 20px;
+    border-top: 1px solid #e2e8f0;
     display: flex;
     gap: 8px;
+    background: #f8fafc;
   }
   .cal-detail-foot button {
     flex: 1;
-    padding: 9px;
-    border: none;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    transition: filter 0.15s;
+    transition: all 0.15s;
     border-style: solid;
   }
-  .cal-detail-foot button:hover { filter: brightness(1.15); }
-  .det-btn-map { background: #1565c0; color: #fff; }
-  .det-btn-edit { background: #2a2f3d; color: #e8c14b; }
+  .det-btn-map { background: #1565c0; color: #fff; border-color: #1565c0 !important; }
+  .det-btn-map:hover { background: #0d47a1; }
+  .det-btn-edit { background: #ffffff; color: #475569; }
+  .det-btn-edit:hover { background: #f1f5f9; }
   @keyframes calFadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: none; } }
   @media (max-width:700px){ #sidebar{ width:170px; } }
   /* ---- ETIQUETAS EN EL MAPA ---- */
@@ -1405,7 +1421,7 @@ function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
 
 function renderAll(){ renderMap(); renderShop(); if (document.getElementById("page-cal").style.display !== "none") renderCalendar(); }
 
-/* ================= CALENDARIO (REJILLA MENSUAL) ================= */
+/* ================= CALENDARIO (REJILLA MENSUAL LIGHT THEME) ================= */
 let calSelectedIdx = -1;
 let calCurrentDate = new Date(2026, 7, 1); // Agosto 2026
 
@@ -1443,7 +1459,7 @@ function renderCalendar() {
   // ── Layout ────────────────────────────────────────────
   html += `<div class="cal-layout">`;
 
-  // ── Calendar Grid Container ───────────────────────────
+  // ── Calendar Container ───────────────────────────
   html += `<div class="calendar-container">`;
 
   // Navigation Header
@@ -1469,67 +1485,163 @@ function renderCalendar() {
 
   html += `</div>`; // navigation-header
 
-  // Grid start
-  html += `<div class="calendar-grid">`;
-
   // Day names headers
+  html += `<div class="calendar-grid-header">`;
   dayNames.forEach(dName => {
     html += `<div class="calendar-day-header">${dName}</div>`;
   });
+  html += `</div>`;
 
-  // Calculate days in month and padding
-  // Monday start: getDay() returns 0 for Sunday, 1 for Monday, etc.
-  const firstDayIndexRaw = new Date(year, month, 1).getDay();
-  const firstDayIndex = firstDayIndexRaw === 0 ? 6 : firstDayIndexRaw - 1; // Convert Sunday=0 to index=6, and Monday=1 to index=0
+  // --- CALCULATE WEEKS ---
+  const firstDay = new Date(year, month, 1);
+  const firstDayOfWeekRaw = firstDay.getDay(); // 0 (Sun) - 6 (Sat)
+  const firstDayOfWeek = firstDayOfWeekRaw === 0 ? 6 : firstDayOfWeekRaw - 1; // 0 (Mon) - 6 (Sun)
   
-  const numDays = new Date(year, month + 1, 0).getDate();
-  const prevNumDays = new Date(year, month, 0).getDate();
-
-  // Prev month padding cells
-  for (let i = firstDayIndex - 1; i >= 0; i--) {
-    const prevDay = prevNumDays - i;
-    html += `<div class="calendar-day-cell other-month">`;
-    html += `<div class="calendar-day-number">${prevDay}</div>`;
-    html += `</div>`;
+  const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+  const totalDaysInPrevMonth = new Date(year, month, 0).getDate();
+  
+  const dayList = [];
+  // Prev month padding
+  for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    const dayNum = totalDaysInPrevMonth - i;
+    dayList.push({
+      date: new Date(year, month - 1, dayNum),
+      isCurrentMonth: false,
+      dayNum: dayNum
+    });
+  }
+  // Current month days
+  for (let i = 1; i <= totalDaysInMonth; i++) {
+    dayList.push({
+      date: new Date(year, month, i),
+      isCurrentMonth: true,
+      dayNum: i
+    });
+  }
+  // Next month padding to complete 7-day groups
+  const nextMonthPaddingCount = (7 - (dayList.length % 7)) % 7;
+  for (let i = 1; i <= nextMonthPaddingCount; i++) {
+    dayList.push({
+      date: new Date(year, month + 1, i),
+      isCurrentMonth: false,
+      dayNum: i
+    });
   }
 
-  // Current month days
-  for (let d = 1; d <= numDays; d++) {
-    const currentDayDate = new Date(year, month, d);
-    const dateStr = currentDayDate.toISOString().split('T')[0];
-    const isToday = dateStr === todayStr;
+  // Segment dayList into weeks
+  const weeks = [];
+  for (let i = 0; i < dayList.length; i += 7) {
+    weeks.push(dayList.slice(i, i + 7));
+  }
 
-    let cellClass = 'calendar-day-cell';
-    if (isToday) cellClass += ' today';
+  // --- RENDER WEEKS ---
+  let gridWeeksHtml = '';
+  weeks.forEach(week => {
+    // Dates in YYYY-MM-DD
+    const weekDatesStr = week.map(d => d.date.toISOString().split('T')[0]);
+    const weekStartStr = weekDatesStr[0];
+    const weekEndStr = weekDatesStr[6];
 
-    html += `<div class="${cellClass}" onclick="calSelectStop(-1)">`;
-    html += `<div class="calendar-day-number">${d}</div>`;
-    html += `<div class="calendar-day-events">`;
-
-    // Find active stops on this day
+    // Find stops overlapping with this week
+    const weekStops = [];
     stops.forEach((s, idx) => {
-      if (s.start && s.end && dateStr >= s.start && dateStr <= s.end) {
-        const isSel = idx === calSelectedIdx;
-        const cVal = color(s);
-        const selectedClass = isSel ? 'selected' : '';
-        html += `<div class="calendar-event-pill ${selectedClass}" onclick="event.stopPropagation();calSelectStop(${idx})" style="background:${cVal};" title="${s.n}\n${formatDateRange(s.start, s.end)}">${idx + 1}. ${s.n}</div>`;
+      if (s.start && s.end && s.start <= weekEndStr && s.end >= weekStartStr) {
+        let startCol = 1;
+        let endCol = 7;
+        
+        const startIdx = weekDatesStr.indexOf(s.start);
+        if (startIdx !== -1) startCol = startIdx + 1;
+        
+        const endIdx = weekDatesStr.indexOf(s.end);
+        if (endIdx !== -1) endCol = endIdx + 1;
+        
+        weekStops.push({
+          stop: s,
+          idx: idx,
+          startCol: startCol,
+          endCol: endCol,
+          span: endCol - startCol + 1
+        });
       }
     });
 
-    html += `</div>`; // day-events
-    html += `</div>`; // day-cell
-  }
+    // Layout slots
+    weekStops.sort((a, b) => {
+      if (a.startCol !== b.startCol) return a.startCol - b.startCol;
+      return b.span - a.span;
+    });
 
-  // Next month padding cells to complete the grid
-  const totalCellsSoFar = firstDayIndex + numDays;
-  const nextMonthCells = (7 - (totalCellsSoFar % 7)) % 7;
-  for (let d = 1; d <= nextMonthCells; d++) {
-    html += `<div class="calendar-day-cell other-month">`;
-    html += `<div class="calendar-day-number">${d}</div>`;
-    html += `</div>`;
-  }
+    const slots = [];
+    weekStops.forEach(ws => {
+      let allocatedSlotIdx = -1;
+      for (let sIdx = 0; sIdx < slots.length; sIdx++) {
+        let fits = true;
+        for (let col = ws.startCol; col <= ws.endCol; col++) {
+          if (slots[sIdx][col - 1]) {
+            fits = false;
+            break;
+          }
+        }
+        if (fits) {
+          allocatedSlotIdx = sIdx;
+          break;
+        }
+      }
+      if (allocatedSlotIdx === -1) {
+        slots.push([false, false, false, false, false, false, false]);
+        allocatedSlotIdx = slots.length - 1;
+      }
+      for (let col = ws.startCol; col <= ws.endCol; col++) {
+        slots[allocatedSlotIdx][col - 1] = true;
+      }
+      ws.slotIdx = allocatedSlotIdx;
+    });
 
-  html += `</div>`; // calendar-grid
+    // Render Week Row
+    let weekHtml = `<div class="calendar-week-row">`;
+    
+    // Background Grid
+    weekHtml += `<div class="calendar-week-bg">`;
+    week.forEach(d => {
+      const isOther = !d.isCurrentMonth ? ' other-month' : '';
+      weekHtml += `<div class="calendar-week-bg-cell${isOther}"></div>`;
+    });
+    weekHtml += `</div>`;
+
+    // Content Grid (Row 1 Day numbers, Row 2+ events)
+    weekHtml += `<div class="calendar-week-content" onclick="calSelectStop(-1)">`;
+    
+    week.forEach((d, colIdx) => {
+      const dateStr = d.date.toISOString().split('T')[0];
+      const isToday = dateStr === todayStr;
+      const todayClass = isToday ? ' today' : '';
+      weekHtml += `<div class="calendar-day-num-wrapper${todayClass}" style="grid-column: ${colIdx + 1}; grid-row: 1;">`;
+      weekHtml += `<span>${d.dayNum}</span>`;
+      weekHtml += `</div>`;
+    });
+
+    weekStops.forEach(ws => {
+      const isSel = ws.idx === calSelectedIdx;
+      const cVal = color(ws.stop);
+      const selectedClass = isSel ? ' selected' : '';
+      weekHtml += `<div class="calendar-event-bar${selectedClass}" 
+                        onclick="event.stopPropagation();calSelectStop(${ws.idx})" 
+                        style="background:${cVal}; grid-column: ${ws.startCol} / span ${ws.span}; grid-row: ${ws.slotIdx + 2};" 
+                        title="${ws.stop.n}\n${formatDateRange(ws.stop.start, ws.stop.end)}">`;
+      weekHtml += `${ws.idx + 1}. ${ws.stop.n}`;
+      weekHtml += `</div>`;
+    });
+
+    weekHtml += `</div>`; // calendar-week-content
+    weekHtml += `</div>`; // calendar-week-row
+    
+    gridWeeksHtml += weekHtml;
+  });
+
+  html += `<div class="calendar-weeks-container">`;
+  html += gridWeeksHtml;
+  html += `</div>`;
+
   html += `</div>`; // calendar-container
 
   // ── Detail panel ─────────────────────────────────────
@@ -1548,7 +1660,7 @@ function renderCalendar() {
     if (det.start) {
       html += `<div class="cal-detail-row"><span class="det-icon">📅</span><div class="det-text"><strong>Período</strong>${formatDateRange(det.start, det.end)}${dur>0?' · '+dur+' día'+(dur>1?'s':''):''}</div></div>`;
     } else {
-      html += `<div class="cal-detail-row"><span class="det-icon">📅</span><div class="det-text" style="color:#5a6476;">Sin fechas — editar parada para asignar</div></div>`;
+      html += `<div class="cal-detail-row"><span class="det-icon">📅</span><div class="det-text" style="color:#64748b;">Sin fechas — editar parada para asignar</div></div>`;
     }
     if (det.note) {
       html += `<div class="cal-detail-row"><span class="det-icon">📝</span><div class="det-text"><strong>Nota</strong>${det.note}</div></div>`;
@@ -1560,9 +1672,9 @@ function renderCalendar() {
     html += `<button class="det-btn-edit" onclick="editStop(${calSelectedIdx});showTab('map');">✏️ Editar</button>`;
     html += `</div>`;
   } else {
-    html += `<div style="padding:40px 20px;text-align:center;color:#3d4455;">`;
+    html += `<div style="padding:40px 20px;text-align:center;color:#64748b;">`;
     html += `<div style="font-size:32px;margin-bottom:12px;">📅</div>`;
-    html += `<div style="font-size:13px;font-weight:600;color:#4a5568;">Clic en una parada<br>para ver detalles</div>`;
+    html += `<div style="font-size:13px;font-weight:600;color:#64748b;">Clic en una parada<br>para ver detalles</div>`;
     html += `</div>`;
   }
   html += `</div>`; // cal-detail
