@@ -989,6 +989,30 @@ let state = {
   expensesVersion: 2
 };
 
+async function checkAndRestoreBackup() {
+  try {
+    const res = await fetch('panamerican_datos.json');
+    if (!res.ok) return;
+    const backup = await res.json();
+    if (backup && backup.items) {
+      const currentNames = new Set((state.items || []).map(i => i.name));
+      const backupNames = new Set(backup.items.map(i => i.name));
+      let missingInCurrent = [...backupNames].filter(name => !currentNames.has(name));
+      if (missingInCurrent.length > 0 || (state.items || []).length < backup.items.length) {
+        if (confirm("Se detectó un archivo de respaldo (backup) local con compras y links personalizados que no están en la base de datos actual (ej: 'Wok' o links de 'Paddleboard'). ¿Querés restaurarlos ahora para recuperar tus datos?")) {
+          state.items = backup.items;
+          state.stops = backup.stops;
+          save();
+          renderAll();
+          alert("¡Backup restaurado con éxito! Compras y links recuperados. Por favor verifica si todo está en orden.");
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("No se pudo comprobar el backup local:", e);
+  }
+}
+
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
   if (doc.exists) {
@@ -1006,6 +1030,11 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
     save();
   }
   renderAll();
+  
+  if (!window.backupChecked) {
+    window.backupChecked = true;
+    checkAndRestoreBackup();
+  }
   
   if (!window.mapCentered) {
     window.mapCentered = true;
