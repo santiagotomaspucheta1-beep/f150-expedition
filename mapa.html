@@ -1914,11 +1914,11 @@ function renderCalendar() {
       const selectedClass = isSel ? ' selected' : '';
       weekHtml += `<div class="calendar-event-bar${selectedClass}" 
                         onclick="event.stopPropagation();calSelectStop(${ws.idx})" 
-                        onpointerdown="calHandlePointerDown(event, ${ws.idx})"
+                        onpointerdown="calHandlePointerDown(event, ${ws.idx}, ${ws.startCol}, ${ws.span})"
                         style="background:${cVal}; grid-column: ${ws.startCol} / span ${ws.span}; grid-row: ${ws.slotIdx + 2};" 
                         title="${ws.stop.n}\n${formatDateRange(ws.stop.start, ws.stop.end)}">`;
-      weekHtml += `<div class="resize-handle-left" onpointerdown="event.stopPropagation(); calHandleResizeDown(event, ${ws.idx}, 'left')"></div>`;
-      weekHtml += `<div class="resize-handle-right" onpointerdown="event.stopPropagation(); calHandleResizeDown(event, ${ws.idx}, 'right')"></div>`;
+      weekHtml += `<div class="resize-handle-left" onpointerdown="event.stopPropagation(); calHandleResizeDown(event, ${ws.idx}, 'left', ${ws.startCol}, ${ws.span})"></div>`;
+      weekHtml += `<div class="resize-handle-right" onpointerdown="event.stopPropagation(); calHandleResizeDown(event, ${ws.idx}, 'right', ${ws.startCol}, ${ws.span})"></div>`;
       weekHtml += `${ws.idx + 1}. ${ws.stop.n}`;
       weekHtml += `</div>`;
     });
@@ -1980,7 +1980,7 @@ function renderCalendar() {
 /* ================= INTERACTION DRAG / RESIZE CALENDAR ================= */
 let calDragState = null;
 
-function calHandlePointerDown(e, stopIdx) {
+function calHandlePointerDown(e, stopIdx, startCol, span) {
   if (e.button !== 0) return; // Left click only
   
   const weekRow = e.currentTarget.closest('.calendar-week-row');
@@ -1995,6 +1995,9 @@ function calHandlePointerDown(e, stopIdx) {
   
   const bar = e.currentTarget;
   bar.setPointerCapture(e.pointerId);
+  bar.style.opacity = '0.75';
+  bar.style.zIndex = '1000';
+  
   const stop = state.stops[stopIdx];
   calDragState = {
     type: 'move',
@@ -2003,12 +2006,14 @@ function calHandlePointerDown(e, stopIdx) {
     initialPointerDate: startDateStr,
     initialStopStart: stop.start,
     initialStopEnd: stop.end,
+    initialStartCol: startCol,
+    initialSpan: span,
     barEl: bar,
     lastDeltaDays: 0
   };
 }
 
-function calHandleResizeDown(e, stopIdx, edge) {
+function calHandleResizeDown(e, stopIdx, edge, startCol, span) {
   if (e.button !== 0) return; // Left click only
   
   const bar = e.currentTarget.parentElement;
@@ -2023,6 +2028,9 @@ function calHandleResizeDown(e, stopIdx, edge) {
   if (!startDateStr) return;
   
   bar.setPointerCapture(e.pointerId);
+  bar.style.opacity = '0.75';
+  bar.style.zIndex = '1000';
+  
   const stop = state.stops[stopIdx];
   calDragState = {
     type: 'resize',
@@ -2032,6 +2040,8 @@ function calHandleResizeDown(e, stopIdx, edge) {
     initialPointerDate: startDateStr,
     initialStopStart: stop.start,
     initialStopEnd: stop.end,
+    initialStartCol: startCol,
+    initialSpan: span,
     barEl: bar,
     lastDeltaDays: 0
   };
@@ -2079,33 +2089,47 @@ window.addEventListener('pointermove', e => {
   if (deltaDays === calDragState.lastDeltaDays) return;
   calDragState.lastDeltaDays = deltaDays;
   
-  const stop = state.stops[calDragState.stopIdx];
-  let tempStart = calDragState.initialStopStart;
-  let tempEnd = calDragState.initialStopEnd;
+  // Calculate visual state
+  let tempStartCol = calDragState.initialStartCol;
+  let tempSpan = calDragState.initialSpan;
   
   if (calDragState.type === 'move') {
-    tempStart = shiftDateStr(calDragState.initialStopStart, deltaDays);
-    tempEnd = shiftDateStr(calDragState.initialStopEnd, deltaDays);
+    tempStartCol = calDragState.initialStartCol + deltaDays;
   } else if (calDragState.type === 'resize') {
     if (calDragState.edge === 'left') {
-      tempStart = shiftDateStr(calDragState.initialStopStart, deltaDays);
-      if (tempStart > tempEnd) tempStart = tempEnd;
+      tempStartCol = calDragState.initialStartCol + deltaDays;
+      tempSpan = calDragState.initialSpan - deltaDays;
+      if (tempSpan < 1) {
+        tempStartCol = calDragState.initialStartCol + calDragState.initialSpan - 1;
+        tempSpan = 1;
+      }
     } else {
-      tempEnd = shiftDateStr(calDragState.initialStopEnd, deltaDays);
-      if (tempEnd < tempStart) tempEnd = tempStart;
+      tempSpan = calDragState.initialSpan + deltaDays;
+      if (tempSpan < 1) tempSpan = 1;
     }
   }
   
-  // Visual live feedback (updating title text during dragging)
-  calDragState.barEl.title = `${stop.n}\n${formatDateRange(tempStart, tempEnd)} (Guardando...)`;
+  // Update styling instantly (smooth UI feedback!)
+  calDragState.barEl.style.gridColumn = `${tempStartCol} / span ${tempSpan}`;
+  
+  const currentWeekRow = calDragState.barEl.closest('.calendar-week-row');
+  if (activeWeekRow && activeWeekRow !== currentWeekRow) {
+    const newContent = activeWeekRow.querySelector('.calendar-week-content');
+    if (newContent) {
+      newContent.appendChild(calDragState.barEl);
+    }
+  }
 });
 
 window.addEventListener('pointerup', e => {
   if (!calDragState) return;
   if (e.pointerId !== calDragState.pointerId) return;
   
+  const bar = calDragState.barEl;
+  bar.style.opacity = '';
+  bar.style.zIndex = '';
   try {
-    calDragState.barEl.releasePointerCapture(e.pointerId);
+    bar.releasePointerCapture(e.pointerId);
   } catch(err) {}
   
   const deltaDays = calDragState.lastDeltaDays || 0;
@@ -2120,6 +2144,8 @@ window.addEventListener('pointerup', e => {
         resizeStopRight(stopIdx, deltaDays);
       }
     }
+  } else {
+    renderAll(); // Put DOM elements back if no changes
   }
   calDragState = null;
 });
