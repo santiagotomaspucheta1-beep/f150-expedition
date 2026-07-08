@@ -457,72 +457,6 @@
     border-radius: 10px;
     padding: 1px 7px;
   }
-  /* ---- EXPENSES PAGE STYLES ---- */
-  .money-summary {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-  .money-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px 20px;
-    flex: 1;
-    min-width: 160px;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  }
-  .money-card .val {
-    font-size: 26px;
-    font-weight: 800;
-    color: #1e293b;
-    line-height: 1.2;
-  }
-  .money-card .lbl {
-    font-size: 11px;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
-    margin-top: 4px;
-  }
-  .expense-section-title {
-    font-size: 16px;
-    font-weight: 800;
-    color: #1e293b;
-    margin: 24px 0 12px;
-    padding-bottom: 6px;
-    border-bottom: 2px solid #e2e8f0;
-  }
-  .expense-row-input {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-  .expense-row-input input, .expense-row-input select {
-    padding: 8px 10px;
-    border: 1px solid #ddd;
-    border-radius: 7px;
-    font-size: 13px;
-  }
-  .expense-cat-bar-container {
-    background: #ffffff;
-    border-radius: 10px;
-    padding: 10px 14px;
-    margin-bottom: 8px;
-    border: 1px solid #e2e8f0;
-  }
-  .expense-cat-bar-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    font-weight: 700;
-    color: #334155;
-    margin-bottom: 4px;
-  }
 </style>
 </head>
 <body>
@@ -531,7 +465,6 @@
   <button class="tab-btn active" id="tab-map" onclick="showTab('map')">🗺️ Mapa</button>
   <button class="tab-btn" id="tab-shop" onclick="showTab('shop')">🛒 Compras</button>
   <button class="tab-btn" id="tab-tramites" onclick="showTab('tramites')">📄 Trámites</button>
-  <button class="tab-btn" id="tab-expenses" onclick="showTab('expenses')">💰 Gastos</button>
   <button class="tab-btn" id="tab-cal" onclick="showTab('cal')">📅 Calendario</button>
   <button class="tab-btn" style="background:#e8c14b; color:#101216;" onclick="window.open('configurador.html', '_blank')">🚙 3D Camper</button>
 </header>
@@ -588,10 +521,6 @@
         <div class="bar"><div id="prog-bar-tramites" style="width:0%"></div></div>
       </div>
       <div id="cats-tramites"></div>
-    </div>
-  </div>
-  <div id="page-expenses" style="display:none; height:100%; overflow-y:auto; padding:16px;">
-    <div class="shop-wrap" id="expenses-wrap">
     </div>
   </div>
   <div id="page-cal" style="display:none; height:100%; overflow-y:auto;"></div>
@@ -710,29 +639,6 @@ const DEFAULT_STOPS = [
 ];
 
 const CATS = { samy:{t:"🐕 Samy", c:"#6a1b9a"}, auto:{t:"🚙 Auto", c:"#1565c0"}, nosotros:{t:"🏕️ Nosotros", c:"#2e7d32"}, tramites:{t:"📄 Trámites", c:"#c62828"} };
-
-const EXPENSE_CATS = {
-  nafta:       {t:"⛽ Nafta / Combustible", c:"#c62828"},
-  comida:      {t:"🍔 Comida",              c:"#2e7d32"},
-  alojamiento: {t:"🏕️ Alojamiento / Camping", c:"#1565c0"},
-  pasajes:     {t:"🛳️ Pasajes (ferry / Darién)", c:"#6a1b9a"},
-  tramites:    {t:"📄 Trámites / Seguros",   c:"#e65100"},
-  otros:       {t:"🧾 Otros",                c:"#546e7a"}
-};
-
-const DEFAULT_BUDGET = {
-  perDayUsd: { comida: 25, alojamiento: 15, otros: 5 },
-  fuel: { lPer100km: 18, pricePerLiterUsd: 0.95 },
-  oneOff: [
-    {name:"Pasaje Darién (auto + 2 personas)", amount: 1400, cat: "pasajes"},
-    {name:"Ferry La Paz → Mazatlán/Topolobampo", amount: 250, cat: "pasajes"},
-    {name:"TIP vehículo México (reembolsable)", amount: 400, cat: "tramites"},
-    {name:"Seguro auto México/Centroamérica", amount: 350, cat: "tramites"},
-    {name:"Seguro viajero (anual)", amount: 300, cat: "tramites"}
-  ],
-  contingencyPct: 15,
-  scenarioDays: null
-};
 
 const DEFAULT_ITEMS = [
  // ---- SAMY ----
@@ -945,73 +851,7 @@ function migrateRoute(state) {
   return true;
 }
 
-function migrateExpenses(state) {
-  let hasChanges = false;
-  if (!state.budget) {
-    state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
-    hasChanges = true;
-  } else {
-    if (!state.budget.perDayUsd) {
-      state.budget.perDayUsd = JSON.parse(JSON.stringify(DEFAULT_BUDGET.perDayUsd));
-      hasChanges = true;
-    }
-    if (!state.budget.fuel) {
-      state.budget.fuel = JSON.parse(JSON.stringify(DEFAULT_BUDGET.fuel));
-      hasChanges = true;
-    }
-    if (!state.budget.oneOff) {
-      state.budget.oneOff = JSON.parse(JSON.stringify(DEFAULT_BUDGET.oneOff));
-      hasChanges = true;
-    }
-    if (state.budget.contingencyPct === undefined) {
-      state.budget.contingencyPct = DEFAULT_BUDGET.contingencyPct;
-      hasChanges = true;
-    }
-  }
-  if (!state.expenses) {
-    state.expenses = [];
-    hasChanges = true;
-  }
-  if (state.expensesVersion !== 2) {
-    state.expensesVersion = 2;
-    hasChanges = true;
-  }
-  return hasChanges;
-}
-
-let state = {
-  stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)),
-  items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)),
-  itemsVersion: 3,
-  stopsVersion: 3,
-  expenses: [],
-  budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-  expensesVersion: 2
-};
-
-async function checkAndRestoreBackup() {
-  try {
-    const res = await fetch('panamerican_datos.json');
-    if (!res.ok) return;
-    const backup = await res.json();
-    if (backup && backup.items) {
-      const currentNames = new Set((state.items || []).map(i => i.name));
-      const backupNames = new Set(backup.items.map(i => i.name));
-      let missingInCurrent = [...backupNames].filter(name => !currentNames.has(name));
-      if (missingInCurrent.length > 0 || (state.items || []).length < backup.items.length) {
-        if (confirm("Se detectó un archivo de respaldo (backup) local con compras y links personalizados que no están en la base de datos actual (ej: 'Wok' o links de 'Paddleboard'). ¿Querés restaurarlos ahora para recuperar tus datos?")) {
-          state.items = backup.items;
-          state.stops = backup.stops;
-          save();
-          renderAll();
-          alert("¡Backup restaurado con éxito! Compras y links recuperados. Por favor verifica si todo está en orden.");
-        }
-      }
-    }
-  } catch (e) {
-    console.warn("No se pudo comprobar el backup local:", e);
-  }
-}
+let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3, stopsVersion: 3 };
 
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
@@ -1021,8 +861,7 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
     const didMigrateStops = migrateStops(state.stops);
     const didMigrateItems = migrateItems(state);
     const didMigrateRoute = migrateRoute(state);
-    const didMigrateExpenses = migrateExpenses(state);
-    if (didMigrateStops || didMigrateItems || didMigrateRoute || didMigrateExpenses) {
+    if (didMigrateStops || didMigrateItems || didMigrateRoute) {
       save();
     }
   } else {
@@ -1030,11 +869,6 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
     save();
   }
   renderAll();
-  
-  if (!window.backupChecked) {
-    window.backupChecked = true;
-    checkAndRestoreBackup();
-  }
   
   if (!window.mapCentered) {
     window.mapCentered = true;
@@ -1075,15 +909,7 @@ function importData(inp){
 }
 function resetData(){
   if(confirm("¿Volver al plan original? Se pierden todos tus cambios (paradas y compras).")){
-    state = {
-      stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)),
-      items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)),
-      itemsVersion: 3,
-      stopsVersion: 3,
-      expenses: [],
-      budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-      expensesVersion: 2
-    };
+    state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3, stopsVersion: 3 };
     save(); renderAll();
   }
 }
@@ -1093,21 +919,16 @@ function showTab(t){
   document.getElementById("page-map").style.display = t==="map" ? "flex" : "none";
   document.getElementById("page-shop").style.display = t==="shop" ? "block" : "none";
   document.getElementById("page-tramites").style.display = t==="tramites" ? "block" : "none";
-  document.getElementById("page-expenses").style.display = t==="expenses" ? "block" : "none";
   document.getElementById("page-cal").style.display = t==="cal" ? "block" : "none";
   
   document.getElementById("tab-map").classList.toggle("active", t==="map");
   document.getElementById("tab-shop").classList.toggle("active", t==="shop");
   document.getElementById("tab-tramites").classList.toggle("active", t==="tramites");
-  if (document.getElementById("tab-expenses")) {
-    document.getElementById("tab-expenses").classList.toggle("active", t==="expenses");
-  }
   document.getElementById("tab-cal").classList.toggle("active", t==="cal");
   
   if(t==="map") setTimeout(()=>map.invalidateSize(), 60);
   if(t==="cal") renderCalendar();
   if(t==="shop" || t==="tramites") renderShop();
-  if(t==="expenses") renderExpenses();
 }
 
 /* ================= MAPA ================= */
@@ -1660,291 +1481,10 @@ function addNote(i){
 }
 function delNote(i,k){ state.items[i].notes.splice(k,1); save(); renderShop(); }
 
-/* ================= GASTOS ================= */
-let tempScenarioDays = null;
-
-function daysBetween(startStr, endStr) {
-  if (!startStr || !endStr) return 0;
-  const a = new Date(startStr + 'T00:00:00'), b = new Date(endStr + 'T00:00:00');
-  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
-  return Math.round((b - a) / 86400000) + 1;
-}
-
-function computeFuelKm() {
-  let km = 0;
-  if (!state.stops || state.stops.length < 2) return 0;
-  for (let i = 0; i < state.stops.length - 1; i++) {
-    km += legEstimate(state.stops[i], state.stops[i+1]).km;
-  }
-  return km;
-}
-
-function computeBudgetEstimate(overrideDays) {
-  let days = overrideDays;
-  if (days === null || days === undefined) {
-    if (state.stops && state.stops.length > 0) {
-      days = daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end);
-    } else {
-      days = 0;
-    }
-  }
-  const fuelCost = (computeFuelKm() / 100) * (state.budget.fuel.lPer100km || 0) * (state.budget.fuel.pricePerLiterUsd || 0);
-  const dailyRate = Object.values(state.budget.perDayUsd || {}).reduce((a,b)=>a+b, 0);
-  const dailyCost = dailyRate * days;
-  const oneOffCost = (state.budget.oneOff || []).reduce((a,o)=>a+(+o.amount||0), 0);
-  const subtotal = fuelCost + dailyCost + oneOffCost;
-  const total = subtotal * (1 + (state.budget.contingencyPct || 0)/100);
-  return { days, dailyRate, fuelCost, dailyCost, oneOffCost, subtotal, total };
-}
-
-function getCategoryEstimate(catKey, days) {
-  let est = 0;
-  if (state.budget.perDayUsd && state.budget.perDayUsd[catKey]) {
-    est += days * state.budget.perDayUsd[catKey];
-  }
-  if (catKey === 'nafta') {
-    est += (computeFuelKm() / 100) * (state.budget.fuel.lPer100km || 0) * (state.budget.fuel.pricePerLiterUsd || 0);
-  }
-  if (state.budget.oneOff) {
-    state.budget.oneOff.forEach(o => {
-      if (o.cat === catKey) est += (+o.amount || 0);
-    });
-  }
-  // Apply contingency multiplier to align categories sum with the total estimate
-  return est * (1 + (state.budget.contingencyPct || 0)/100);
-}
-
-function renderExpenses() {
-  const container = document.getElementById("expenses-wrap");
-  if (!container) return;
-
-  const realDays = (state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0;
-  const activeDays = tempScenarioDays !== null ? tempScenarioDays : realDays;
-
-  // 1. Renders the layout skeleton only if it's not present
-  if (!document.getElementById("expenses-skeleton")) {
-    container.innerHTML = `
-      <div id="expenses-skeleton">
-        <!-- Resumen de Dinero -->
-        <div class="money-summary">
-          <div class="money-card">
-            <div class="val" id="exp-total-val">$0.00</div>
-            <div class="lbl" id="exp-total-lbl">Estimado Total</div>
-          </div>
-          <div class="money-card">
-            <div class="val" id="exp-days-val">0</div>
-            <div class="lbl">Días Simulados</div>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
-          <!-- COLUMNA 1: CONFIGURACION -->
-          <div>
-            <div class="expense-section-title">⚙️ Simulación y Parámetros</div>
-            
-            <!-- Escenario slider -->
-            <div class="poi-control-card" style="margin-bottom:16px;">
-              <div style="font-weight:700; font-size:13.5px; color:#1e293b; margin-bottom:8px;">Duración del viaje (días):</div>
-              <div style="display:flex; gap:12px; align-items:center;">
-                <input type="range" id="exp-slider-range" min="10" max="365" style="flex:1; cursor:pointer;" oninput="updateScenarioDays(this.value)">
-                <input type="number" id="exp-slider-num" style="width:70px; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; text-align:center;" oninput="updateScenarioDays(this.value)">
-                <button class="stop-btn-sm" style="padding:6px 10px;" onclick="resetScenarioDays()">Reset</button>
-              </div>
-              <div style="font-size:11px; color:#64748b; margin-top:6px;">Duración real por itinerario: <b id="exp-real-days-txt">0 días</b></div>
-            </div>
-
-            <!-- Parámetros del presupuesto -->
-            <div class="poi-control-card" style="margin-bottom:16px;" id="exp-config-inputs"></div>
-
-          </div>
-
-          <!-- COLUMNA 2: ESTIMADOS Y CATEGORIAS -->
-          <div>
-            <div class="expense-section-title">📊 Desglose por Categoría</div>
-            <div id="exp-categories-list"></div>
-          </div>
-        </div>
-
-        <!-- Costos Puntuales Únicos (Fuera del grid, ancho completo) -->
-        <div style="margin-top: 24px;">
-          <div style="font-weight:800; font-size:13.5px; color:#1e293b; margin-bottom:8px; display:flex; justify-content:between; align-items:center;">
-            <span>Costos Puntuales Únicos</span>
-            <button class="stop-btn-sm" style="margin-left:auto; padding:3px 8px; font-size:11px;" onclick="addOneOff()">＋ Agregar</button>
-          </div>
-          <div class="poi-control-card" id="exp-oneoff-list"></div>
-        </div>
-      </div>
-    `;
-  }
-
-  // 2. Set static inputs and titles that don't block slider focus
-  const realDaysTxt = document.getElementById("exp-real-days-txt");
-  if (realDaysTxt) realDaysTxt.innerText = `${realDays} días`;
-
-  const rangeEl = document.getElementById("exp-slider-range");
-  const numEl = document.getElementById("exp-slider-num");
-  if (rangeEl && rangeEl.value != activeDays) rangeEl.value = activeDays;
-  if (numEl && numEl.value != activeDays) numEl.value = activeDays;
-
-  // 3. Render parameters block
-  const configInputs = document.getElementById("exp-config-inputs");
-  if (configInputs) {
-    configInputs.innerHTML = `
-      <div style="font-weight:800; font-size:13px; color:#1e293b; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Parámetros del Presupuesto</div>
-      
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
-        <div>
-          <label style="font-size:11px; color:#64748b; font-weight:700; display:block; margin-bottom:2px;">Consumo Nafta (L/100km)</label>
-          <input type="number" step="0.1" value="${state.budget.fuel.lPer100km}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'lPer100km', this.value)">
-        </div>
-        <div>
-          <label style="font-size:11px; color:#64748b; font-weight:700; display:block; margin-bottom:2px;">Precio Litro Nafta (USD)</label>
-          <input type="number" step="0.01" value="${state.budget.fuel.pricePerLiterUsd}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'pricePerLiterUsd', this.value)">
-        </div>
-      </div>
-
-      <div style="font-weight:700; font-size:12px; color:#334155; margin-bottom:6px;">Gastos diarios estimados (USD):</div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
-        <div>
-          <label style="font-size:10px; color:#64748b; display:block;">🍔 Comida</label>
-          <input type="number" value="${state.budget.perDayUsd.comida}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'comida', this.value)">
-        </div>
-        <div>
-          <label style="font-size:10px; color:#64748b; display:block;">🏕️ Alojamiento</label>
-          <input type="number" value="${state.budget.perDayUsd.alojamiento}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'alojamiento', this.value)">
-        </div>
-        <div>
-          <label style="font-size:10px; color:#64748b; display:block;">🧾 Otros</label>
-          <input type="number" value="${state.budget.perDayUsd.otros}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'otros', this.value)">
-        </div>
-      </div>
-
-      <div>
-        <label style="font-size:11px; color:#64748b; font-weight:700; display:block; margin-bottom:2px;">Margen Contingencia (%)</label>
-        <input type="number" value="${state.budget.contingencyPct}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('contingencyPct', null, this.value)">
-      </div>
-    `;
-  }
-
-  // 4. Render one-off list
-  renderOneOffList();
-
-  // 5. Instantly recalculate outputs and progress bars
-  updateExpensesUI(activeDays);
-}
-
-function renderOneOffList() {
-  const oneOffList = document.getElementById("exp-oneoff-list");
-  if (!oneOffList) return;
-  oneOffList.innerHTML = (state.budget.oneOff || []).map((o, idx) => `
-    <div class="expense-row-input" style="margin-bottom:8px;">
-      <input type="text" value="${esc(o.name)}" style="flex:2; font-size:11.5px; padding:4px 6px;" onchange="state.budget.oneOff[${idx}].name = this.value; save(); renderExpenses();">
-      <input type="number" value="${o.amount}" style="width:70px; font-size:11.5px; padding:4px 6px;" onchange="updateOneOffAmount(${idx}, this.value)">
-      <select style="width:100px; font-size:11px; padding:4px 6px;" onchange="state.budget.oneOff[${idx}].cat = this.value; save(); renderExpenses();">
-        ${Object.keys(EXPENSE_CATS).map(catKey => `<option value="${catKey}" ${o.cat === catKey ? 'selected' : ''}>${EXPENSE_CATS[catKey].t.split(' ')[1] || catKey}</option>`).join('')}
-      </select>
-      <button class="btn-del" style="font-size:13px; padding:2px 6px;" onclick="delOneOff(${idx})">🗑️</button>
-    </div>
-  `).join('');
-}
-
-function updateScenarioDays(val) {
-  const days = parseInt(val) || 1;
-  tempScenarioDays = days;
-
-  const range = document.getElementById("exp-slider-range");
-  const num = document.getElementById("exp-slider-num");
-  if (range && range.value != days) range.value = days;
-  if (num && num.value != days) num.value = days;
-
-  updateExpensesUI(days);
-}
-
-function resetScenarioDays() {
-  tempScenarioDays = null;
-  const realDays = (state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0;
-  
-  const range = document.getElementById("exp-slider-range");
-  const num = document.getElementById("exp-slider-num");
-  if (range) range.value = realDays;
-  if (num) num.value = realDays;
-
-  updateExpensesUI(realDays);
-}
-
-function updateExpensesUI(activeDays) {
-  const activeEst = computeBudgetEstimate(activeDays);
-  
-  const totalValEl = document.getElementById("exp-total-val");
-  const totalLblEl = document.getElementById("exp-total-lbl");
-  const daysValEl = document.getElementById("exp-days-val");
-  
-  if (totalValEl) totalValEl.innerText = `$${activeEst.total.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-  if (totalLblEl) totalLblEl.innerText = `Estimado Total`;
-  if (daysValEl) daysValEl.innerText = `${activeDays} días`;
-
-  const catListEl = document.getElementById("exp-categories-list");
-  if (catListEl) {
-    catListEl.innerHTML = Object.keys(EXPENSE_CATS).map(c => {
-      const catEst = getCategoryEstimate(c, activeDays);
-      const catPct = activeEst.total > 0 ? (catEst / activeEst.total * 100) : 0;
-      return `
-        <div class="expense-cat-bar-container">
-          <div class="expense-cat-bar-header">
-            <span><span style="color:${EXPENSE_CATS[c].c}">●</span> ${EXPENSE_CATS[c].t}</span>
-            <span><b>$${catEst.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</b> (${catPct.toFixed(1)}%)</span>
-          </div>
-          <div class="bar" style="height: 6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
-            <div style="width: ${Math.min(100, catPct)}%; height: 100%; background: ${EXPENSE_CATS[c].c};"></div>
-          </div>
-        </div>
-      `;
-    }).join('');
-  }
-}
-
-function updateBudgetSetting(section, key, val) {
-  if (section === 'perDayUsd') {
-    state.budget.perDayUsd[key] = parseFloat(val) || 0;
-  } else if (section === 'fuel') {
-    state.budget.fuel[key] = parseFloat(val) || 0;
-  } else if (section === 'contingencyPct') {
-    state.budget.contingencyPct = parseFloat(val) || 0;
-  }
-  save();
-  const activeDays = tempScenarioDays !== null ? tempScenarioDays : ((state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0);
-  updateExpensesUI(activeDays);
-}
-
-function updateOneOffAmount(idx, val) {
-  state.budget.oneOff[idx].amount = parseFloat(val) || 0;
-  save();
-  const activeDays = tempScenarioDays !== null ? tempScenarioDays : ((state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0);
-  updateExpensesUI(activeDays);
-}
-
-function addOneOff() {
-  if (!state.budget.oneOff) state.budget.oneOff = [];
-  state.budget.oneOff.push({ name: "Costo puntual nuevo", amount: 100, cat: "otros" });
-  save();
-  renderExpenses();
-}
-
-function delOneOff(idx) {
-  state.budget.oneOff.splice(idx, 1);
-  save();
-  renderExpenses();
-}
-
 /* ================= UTIL ================= */
 function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 
-function renderAll(){
-  renderMap();
-  renderShop();
-  if (document.getElementById("page-cal").style.display !== "none") renderCalendar();
-  if (document.getElementById("page-expenses").style.display !== "none") renderExpenses();
-}
+function renderAll(){ renderMap(); renderShop(); if (document.getElementById("page-cal").style.display !== "none") renderCalendar(); }
 
 /* ================= CALENDARIO (REJILLA MENSUAL LIGHT THEME) ================= */
 let calSelectedIdx = -1;
@@ -1997,23 +1537,15 @@ function renderCalendar() {
   html += `</div>`;
 
   html += `<div class="calendar-quick-months">`;
-  const quicks = [];
-  let curr = new Date(globalMin.getFullYear(), globalMin.getMonth(), 1);
-  const endLimit = new Date(globalMax.getFullYear(), globalMax.getMonth(), 1);
-  // Guard loop limits to prevent infinite loops in case of corrupt dates
-  let loopCount = 0;
-  while (curr <= endLimit && loopCount < 48) {
-    loopCount++;
-    const y = curr.getFullYear();
-    const m = curr.getMonth();
-    const suffix = y === 2026 ? "" : " '" + String(y).slice(-2);
-    quicks.push({
-      name: months[m] + suffix,
-      y: y,
-      m: m
-    });
-    curr.setMonth(curr.getMonth() + 1);
-  }
+  const quicks = [
+    { name: "Ago", y: 2026, m: 7 },
+    { name: "Sep", y: 2026, m: 8 },
+    { name: "Oct", y: 2026, m: 9 },
+    { name: "Nov", y: 2026, m: 10 },
+    { name: "Dic", y: 2026, m: 11 },
+    { name: "Ene 27", y: 2027, m: 0 },
+    { name: "Feb 27", y: 2027, m: 1 }
+  ];
   quicks.forEach(q => {
     const activeClass = (year === q.y && month === q.m) ? 'active' : '';
     html += `<button class="calendar-quick-btn ${activeClass}" onclick="calSetMonth(${q.y}, ${q.m})">${q.name}</button>`;
@@ -2258,8 +1790,6 @@ function checkHashTab() {
     showTab('shop');
   } else if (h === '#tramites') {
     showTab('tramites');
-  } else if (h === '#gastos' || h === '#expenses') {
-    showTab('expenses');
   } else if (h === '#cal' || h === '#calendario' || h === '#calendar') {
     showTab('cal');
   } else {
