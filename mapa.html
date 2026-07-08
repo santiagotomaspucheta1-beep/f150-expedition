@@ -946,11 +946,37 @@ function migrateRoute(state) {
 }
 
 function migrateExpenses(state) {
-  if (state.expensesVersion >= 1) return false;
-  state.expenses = state.expenses || [];
-  state.budget = state.budget || JSON.parse(JSON.stringify(DEFAULT_BUDGET));
-  state.expensesVersion = 1;
-  return true;
+  let hasChanges = false;
+  if (!state.budget) {
+    state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
+    hasChanges = true;
+  } else {
+    if (!state.budget.perDayUsd) {
+      state.budget.perDayUsd = JSON.parse(JSON.stringify(DEFAULT_BUDGET.perDayUsd));
+      hasChanges = true;
+    }
+    if (!state.budget.fuel) {
+      state.budget.fuel = JSON.parse(JSON.stringify(DEFAULT_BUDGET.fuel));
+      hasChanges = true;
+    }
+    if (!state.budget.oneOff) {
+      state.budget.oneOff = JSON.parse(JSON.stringify(DEFAULT_BUDGET.oneOff));
+      hasChanges = true;
+    }
+    if (state.budget.contingencyPct === undefined) {
+      state.budget.contingencyPct = DEFAULT_BUDGET.contingencyPct;
+      hasChanges = true;
+    }
+  }
+  if (!state.expenses) {
+    state.expenses = [];
+    hasChanges = true;
+  }
+  if (state.expensesVersion !== 2) {
+    state.expensesVersion = 2;
+    hasChanges = true;
+  }
+  return hasChanges;
 }
 
 let state = {
@@ -960,7 +986,7 @@ let state = {
   stopsVersion: 3,
   expenses: [],
   budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-  expensesVersion: 1
+  expensesVersion: 2
 };
 
 // Suscribirse a cambios en tiempo real
@@ -1027,7 +1053,7 @@ function resetData(){
       stopsVersion: 3,
       expenses: [],
       budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-      expensesVersion: 1
+      expensesVersion: 2
     };
     save(); renderAll();
   }
