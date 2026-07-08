@@ -573,15 +573,69 @@ const DEFAULT_STOPS = [
  {n:"Los Ángeles, CA", start:"2026-09-25", end:"2026-09-25", lat:34.05, lon:-118.24, b:8, note:"Paso / visita corta."},
  {n:"San Diego, CA", start:"2026-09-26", end:"2026-09-26", lat:32.72, lon:-117.16, b:8, note:"Playas dog-friendly. Último punto costa EEUU."},
  {n:"Nogales — cruce a México", start:"2026-09-27", end:"2026-09-27", lat:31.33, lon:-110.94, b:9, note:"FMM + certificado de salud de Samy."},
- {n:"Hermosillo, Son.", start:"2026-09-27", end:"2026-10-01", lat:29.07, lon:-110.96, b:9, note:"Amigos, descanso, service, compras México."},
- {n:"Mexicali / Tecate — entrada a Baja", start:"2026-10-02", end:"2026-10-02", lat:32.66, lon:-115.47, b:10, note:""},
- {n:"Ensenada, BC", start:"2026-10-02", end:"2026-10-03", lat:31.87, lon:-116.60, b:10, note:""},
- {n:"Guerrero Negro, BCS", start:"2026-10-05", end:"2026-10-05", lat:27.97, lon:-114.06, b:10, note:"Cruce del paralelo 28."},
- {n:"San Ignacio, BCS", start:"2026-10-06", end:"2026-10-06", lat:27.28, lon:-112.90, b:10, note:"Oasis y misión."},
- {n:"Mulegé / Bahía Concepción, BCS", start:"2026-10-07", end:"2026-10-09", lat:26.85, lon:-111.95, b:10, note:"Las mejores playas para acampar de Baja."},
- {n:"Loreto, BCS", start:"2026-10-10", end:"2026-10-10", lat:26.01, lon:-111.35, b:10, note:"Pueblo mágico."},
- {n:"La Paz, BCS — FERRY", start:"2026-10-11", end:"2026-10-12", lat:24.14, lon:-110.31, b:11, note:"Ferry a Mazatlán o Topolobampo. Confirmar reglas perro + TIP."},
- {n:"Mazatlán, Sin. (destino tentativo)", start:"2026-10-13", end:"2026-10-13", lat:23.25, lon:-106.41, b:11, note:"Continúa hacia México central y Centroamérica…"}
+ {n:"Hermosillo, Son.", start:"2026-09-27", end:"2026-10-12", lat:29.07, lon:-110.96, b:9, note:"Amigos, descanso, service, compras México. Base hasta el 12 de octubre."},
+ {n:"Mexicali / Tecate — entrada a Baja", start:"2026-10-13", end:"2026-10-13", lat:32.66, lon:-115.47, b:10, note:""},
+ {n:"Ensenada, BC", start:"2026-10-13", end:"2026-10-14", lat:31.87, lon:-116.60, b:10, note:""},
+ {n:"Guerrero Negro, BCS", start:"2026-10-16", end:"2026-10-16", lat:27.97, lon:-114.06, b:10, note:"Cruce del paralelo 28."},
+ {n:"San Ignacio, BCS", start:"2026-10-17", end:"2026-10-17", lat:27.28, lon:-112.90, b:10, note:"Oasis y misión."},
+ {n:"Mulegé / Bahía Concepción, BCS", start:"2026-10-18", end:"2026-10-20", lat:26.85, lon:-111.95, b:10, note:"Las mejores playas para acampar de Baja."},
+ {n:"Loreto, BCS", start:"2026-10-21", end:"2026-10-21", lat:26.01, lon:-111.35, b:10, note:"Pueblo mágico."},
+ {n:"La Paz, BCS — FERRY", start:"2026-10-22", end:"2026-10-23", lat:24.14, lon:-110.31, b:11, note:"Ferry a Mazatlán o Topolobampo. Confirmar reglas perro + TIP."},
+ {n:"Mazatlán, Sin.", start:"2026-10-24", end:"2026-10-25", lat:23.25, lon:-106.41, b:11, note:"Llegada del ferry. Playa y descanso antes de bajar al sur."},
+ {n:"Sayulita / San Pancho, Nay.", start:"2026-10-26", end:"2026-10-28", lat:20.87, lon:-105.44, b:12, note:"Playas dog-friendly, pueblo surfer."},
+ {n:"Guadalajara, Jal.", start:"2026-10-29", end:"2026-10-31", lat:20.677, lon:-103.347, b:12, note:"Tequila y Tlaquepaque cerca. Buena ciudad para service."},
+ {n:"Guanajuato / San Miguel de Allende", start:"2026-11-01", end:"2026-11-03", lat:21.019, lon:-101.257, b:12, note:"Ciudades coloniales; SMA queda a 1h30."},
+ {n:"Santiago de Querétaro — viñedos", start:"2026-11-04", end:"2026-11-06", lat:20.588, lon:-100.390, b:12, note:"Recomendación del amigo mexicano: muchos viñedos (Tequisquiapan, ruta del vino y queso). Peña de Bernal en ruta."},
+ {n:"Xilitla — Jardín Surrealista", start:"2026-11-07", end:"2026-11-08", lat:21.386, lon:-98.995, b:12, note:"Jardín de Edward James. Entrada a la Huasteca por la Sierra Gorda (ruta de montaña, ir de día)."},
+ {n:"Huasteca Potosina — Cd. Valles / Tamasopo", start:"2026-11-09", end:"2026-11-12", lat:21.99, lon:-99.01, b:12, note:"SÍ O SÍ según el amigo mexicano: Puente de Dios (Tamasopo), cascada de Tamul, Micos. Agua turquesa."},
+ {n:"CDMX", start:"2026-11-13", end:"2026-11-17", lat:19.433, lon:-99.133, b:12, note:"Recomendación del amigo: CDMX y pueblos de alrededor, pirámides (Teotihuacán). Ojo: Hoy No Circula aplica a placas extranjeras."},
+ {n:"Puebla, Pue.", start:"2026-11-18", end:"2026-11-19", lat:19.041, lon:-98.206, b:13, note:"Cholula y vista a los volcanes."},
+ {n:"Oaxaca, Oax.", start:"2026-11-20", end:"2026-11-23", lat:17.073, lon:-96.727, b:13, note:"Hierve el Agua, Monte Albán, mezcal. Recomendación del amigo."},
+ {n:"Puerto Escondido, Oax.", start:"2026-11-24", end:"2026-11-26", lat:15.862, lon:-97.077, b:13, note:"Recomendación del amigo. Carrizalillo, Zicatela. Bajada de Oaxaca con muchas curvas (vía 131/175), ir de día."},
+ {n:"Bahías de Huatulco (paso)", start:"2026-11-27", end:"2026-11-27", lat:15.769, lon:-96.133, b:13, note:"Noche de corte antes del tramo largo a Chiapas."},
+ {n:"San Cristóbal de las Casas, Chis.", start:"2026-11-28", end:"2026-12-01", lat:16.737, lon:-92.638, b:13, note:"Recomendación del amigo: Cañón del Sumidero (lancha desde Chiapa de Corzo) + San Cristóbal."},
+ {n:"Palenque, Chis.", start:"2026-12-02", end:"2026-12-03", lat:17.484, lon:-91.982, b:22, note:"Ruinas en selva, cascadas Agua Azul en ruta. Consultar estado de la ruta 199; alternativa por Villahermosa."},
+ {n:"Mérida, Yuc.", start:"2026-12-04", end:"2026-12-07", lat:20.967, lon:-89.624, b:22, note:"«A Lula le va a encantar» (amigo mexicano). Uxmal, cenotes, Progreso, Celestún (flamencos)."},
+ {n:"Holbox (Chiquilá)", start:"2026-12-08", end:"2026-12-10", lat:21.522, lon:-87.379, b:22, note:"Recomendación del amigo. La F-150 queda en estacionamiento de Chiquilá; se cruza en ferry a pie. Perros permitidos en la isla."},
+ {n:"Cancún / Riviera Maya", start:"2026-12-11", end:"2026-12-13", lat:21.161, lon:-86.851, b:22, note:"Recomendación del amigo. Playas, cenotes de ruta, Tulum bajando hacia el sur."},
+ {n:"Bacalar", start:"2026-12-14", end:"2026-12-15", lat:18.677, lon:-88.395, b:22, note:"Laguna de los 7 colores."},
+ {n:"Chetumal — cruce a Belice", start:"2026-12-16", end:"2026-12-16", lat:18.503, lon:-88.305, b:23, note:"CANCELAR el TIP mexicano acá (depósito Banjercito). Belice: seguro en frontera + permiso del perro. Alternativa sin Belice: volver por Palenque y cruzar por El Ceibo."},
+ {n:"San Ignacio (Belice)", start:"2026-12-16", end:"2026-12-17", lat:17.159, lon:-89.070, b:23, note:"Base para cuevas ATM. Inglés oficial, dólar beliceño fijo 2:1 con USD."},
+ {n:"Flores / Tikal, Guatemala", start:"2026-12-18", end:"2026-12-20", lat:16.928, lon:-89.892, b:14, note:"Cruce Melchor de Mencos. Tikal al amanecer."},
+ {n:"Río Dulce, Guatemala (paso)", start:"2026-12-21", end:"2026-12-21", lat:15.660, lon:-88.996, b:14, note:"Noche de corte; castillo de San Felipe."},
+ {n:"Antigua Guatemala", start:"2026-12-22", end:"2026-12-26", lat:14.557, lon:-90.733, b:14, note:"NAVIDAD en Antigua. Volcán Acatenango (trekking opcional, con guía)."},
+ {n:"Lago Atitlán (Panajachel)", start:"2026-12-27", end:"2026-12-29", lat:14.741, lon:-91.157, b:14, note:"Volcanes y pueblos alrededor del lago."},
+ {n:"El Tunco / costa de El Salvador", start:"2026-12-30", end:"2027-01-02", lat:13.492, lon:-89.381, b:14, note:"AÑO NUEVO en la playa. Surf. Hoy de los países más seguros de la región."},
+ {n:"Choluteca, Honduras (paso)", start:"2027-01-03", end:"2027-01-03", lat:13.30, lon:-87.19, b:15, note:"Solo ~150 km de Honduras: 2 fronteras el mismo día (El Amatillo y Guasaule). Salir temprano."},
+ {n:"León, Nicaragua", start:"2027-01-04", end:"2027-01-05", lat:12.435, lon:-86.878, b:15, note:"Volcano boarding en Cerro Negro. Frontera nica = la más lenta del viaje, paciencia."},
+ {n:"Granada / Ometepe, Nicaragua", start:"2027-01-06", end:"2027-01-08", lat:11.930, lon:-85.956, b:15, note:"Ometepe requiere ferry chico con el auto (opcional)."},
+ {n:"La Fortuna / Arenal, Costa Rica", start:"2027-01-09", end:"2027-01-11", lat:10.468, lon:-84.643, b:16, note:"Termas y volcán. Costa Rica = el país más caro del tramo."},
+ {n:"Uvita / Costa Ballena, CR", start:"2027-01-12", end:"2027-01-14", lat:9.163, lon:-83.737, b:16, note:"Playas y ballenas. Manuel Antonio no admite perros."},
+ {n:"Boquete, Panamá", start:"2027-01-15", end:"2027-01-16", lat:8.780, lon:-82.441, b:16, note:"Montaña, café, clima fresco."},
+ {n:"Ciudad de Panamá", start:"2027-01-17", end:"2027-01-20", lat:8.983, lon:-79.519, b:16, note:"Canal + papeleo de embarque. Contactar agente de shipping MESES antes (ya pasadas las fiestas, oficinas normales)."},
+ {n:"Colón — EMBARQUE Darién", start:"2027-01-21", end:"2027-01-21", lat:9.359, lon:-79.900, b:17, note:"Entrega de la F-150 (RoRo o contenedor) rumbo a Cartagena. No hay ruta por el Darién."},
+ {n:"Cartagena, Colombia", start:"2027-01-22", end:"2027-01-31", lat:10.391, lon:-75.479, b:17, note:"Vuelo con Samy desde Panamá. Retiro de la camioneta del puerto (la aduana toma varios días)."},
+ {n:"Medellín / Guatapé", start:"2027-02-01", end:"2027-02-05", lat:6.244, lon:-75.573, b:17, note:"Guatapé y la Piedra del Peñol a 2h."},
+ {n:"Salento / Eje Cafetero", start:"2027-02-06", end:"2027-02-08", lat:4.637, lon:-75.570, b:17, note:"Valle de Cocora (palmas de cera), fincas cafeteras."},
+ {n:"Ipiales — Santuario de Las Lajas", start:"2027-02-09", end:"2027-02-10", lat:0.827, lon:-77.644, b:17, note:"Frontera Rumichaca a Ecuador."},
+ {n:"Quito, Ecuador", start:"2027-02-11", end:"2027-02-13", lat:-0.180, lon:-78.467, b:18, note:"Mitad del Mundo, centro histórico."},
+ {n:"Baños, Ecuador", start:"2027-02-14", end:"2027-02-15", lat:-1.396, lon:-78.424, b:18, note:"Ruta de las Cascadas, columpio del fin del mundo."},
+ {n:"Cuenca, Ecuador", start:"2027-02-16", end:"2027-02-17", lat:-2.900, lon:-79.005, b:18, note:"Colonial. De acá se baja a la costa peruana."},
+ {n:"Máncora, Perú", start:"2027-02-18", end:"2027-02-20", lat:-4.108, lon:-81.045, b:19, note:"Playa y descanso después de tantas fronteras."},
+ {n:"Huaraz / Cordillera Blanca", start:"2027-02-21", end:"2027-02-23", lat:-9.526, lon:-77.528, b:19, note:"Laguna Parón / 69. Ojo con la altura, también para Samy."},
+ {n:"Lima, Perú", start:"2027-02-24", end:"2027-02-26", lat:-12.046, lon:-77.043, b:19, note:"Service de la F-150, gastronomía."},
+ {n:"Paracas / Huacachina", start:"2027-02-27", end:"2027-02-28", lat:-13.86, lon:-76.25, b:19, note:"Islas Ballestas y oasis con dunas."},
+ {n:"Arequipa / Cañón del Colca", start:"2027-03-01", end:"2027-03-03", lat:-16.409, lon:-71.537, b:19, note:"Cóndores en el Colca. Empieza la altura real."},
+ {n:"Cusco / Valle Sagrado", start:"2027-03-04", end:"2027-03-09", lat:-13.532, lon:-71.967, b:19, note:"Machu Picchu: reservar tren y entradas con anticipación."},
+ {n:"Copacabana / Titicaca (Bolivia)", start:"2027-03-10", end:"2027-03-11", lat:-16.166, lon:-69.086, b:20, note:"Cruce Kasani. En Bolivia los extranjeros pagan nafta a precio internacional; llevar efectivo."},
+ {n:"La Paz (Bolivia)", start:"2027-03-12", end:"2027-03-14", lat:-16.500, lon:-68.150, b:20, note:"Teleféricos, Valle de la Luna."},
+ {n:"Uyuni (Bolivia)", start:"2027-03-15", end:"2027-03-16", lat:-20.464, lon:-66.825, b:20, note:"Fin de la época de lluvias: el salar puede seguir inundado (efecto espejo). NO entrar con la camioneta si hay agua; tour desde el borde."},
+ {n:"Villazón — cruce a Argentina", start:"2027-03-17", end:"2027-03-17", lat:-22.09, lon:-65.60, b:20, note:"Último cruce de frontera del viaje."},
+ {n:"Purmamarca / Humahuaca, Jujuy", start:"2027-03-18", end:"2027-03-19", lat:-23.21, lon:-65.35, b:21, note:"Cerro de los 7 Colores, Hornocal. ¡Ya en Argentina!"},
+ {n:"Salta", start:"2027-03-20", end:"2027-03-22", lat:-24.783, lon:-65.412, b:21, note:"Empanadas y descanso."},
+ {n:"Cafayate", start:"2027-03-23", end:"2027-03-24", lat:-26.073, lon:-65.976, b:21, note:"Quebrada de las Conchas, torrontés."},
+ {n:"Tucumán", start:"2027-03-25", end:"2027-03-25", lat:-26.808, lon:-65.217, b:21, note:"Paso; Tafí del Valle en ruta desde Cafayate."},
+ {n:"Córdoba — LLEGADA 🏁", start:"2027-03-26", end:"2027-03-26", lat:-31.417, lon:-64.183, b:21, note:"Fin de la Panamericana: Chattanooga → Córdoba."}
 ];
 
 const CATS = { samy:{t:"🐕 Samy", c:"#6a1b9a"}, auto:{t:"🚙 Auto", c:"#1565c0"}, nosotros:{t:"🏕️ Nosotros", c:"#2e7d32"}, tramites:{t:"📄 Trámites", c:"#c62828"} };
@@ -787,7 +841,49 @@ function migrateItems(state) {
   return true; // Force save to persist version 3
 }
 
-let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3 };
+// Migración de ruta v2 (2026-07-08): Hermosillo hasta 12-oct, Baja corrida +11 días,
+// y ruta completa nueva Mazatlán → Córdoba. Fusiona sin duplicar y sin tocar paradas del usuario.
+function migrateRoute(state) {
+  if ((state.stopsVersion || 1) >= 2) return false;
+  const stops = state.stops || [];
+
+  // 1. Corregir fechas/nombres de paradas que ya existían (por prefijo de nombre)
+  const fix = {
+    "Hermosillo": {start:"2026-09-27", end:"2026-10-12", note:"Amigos, descanso, service, compras México. Base hasta el 12 de octubre."},
+    "Mexicali": {start:"2026-10-13", end:"2026-10-13"},
+    "Ensenada": {start:"2026-10-13", end:"2026-10-14"},
+    "Guerrero Negro": {start:"2026-10-16", end:"2026-10-16"},
+    "San Ignacio": {start:"2026-10-17", end:"2026-10-17"},
+    "Mulegé": {start:"2026-10-18", end:"2026-10-20"},
+    "Loreto": {start:"2026-10-21", end:"2026-10-21"},
+    "La Paz, BCS": {start:"2026-10-22", end:"2026-10-23"},
+    "Mazatlán": {n:"Mazatlán, Sin.", start:"2026-10-24", end:"2026-10-25", note:"Llegada del ferry. Playa y descanso antes de bajar al sur."}
+  };
+  stops.forEach(s => {
+    for (const k in fix) {
+      if (s.n && s.n.startsWith(k)) Object.assign(s, fix[k]);
+    }
+  });
+
+  // 2. Insertar las paradas nuevas de DEFAULT_STOPS que falten, respetando el orden
+  const key = n => (n || "").split(",")[0].trim();
+  let insertAt = stops.length;
+  DEFAULT_STOPS.forEach(ds => {
+    const idx = stops.findIndex(s => s.n === ds.n || key(s.n) === key(ds.n));
+    if (idx >= 0) {
+      insertAt = idx + 1;
+    } else {
+      stops.splice(insertAt, 0, JSON.parse(JSON.stringify(ds)));
+      insertAt++;
+    }
+  });
+
+  state.stops = stops;
+  state.stopsVersion = 2;
+  return true;
+}
+
+let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3, stopsVersion: 2 };
 
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
@@ -796,7 +892,8 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
     if (!state.items) state.items = [];
     const didMigrateStops = migrateStops(state.stops);
     const didMigrateItems = migrateItems(state);
-    if (didMigrateStops || didMigrateItems) {
+    const didMigrateRoute = migrateRoute(state);
+    if (didMigrateStops || didMigrateItems || didMigrateRoute) {
       save();
     }
   } else {
@@ -844,7 +941,7 @@ function importData(inp){
 }
 function resetData(){
   if(confirm("¿Volver al plan original? Se pierden todos tus cambios (paradas y compras).")){
-    state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)) };
+    state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3, stopsVersion: 2 };
     save(); renderAll();
   }
 }
@@ -1104,7 +1201,7 @@ const NOMAD_POINTS = [
   }
 ];
 
-const COLORS = {1:"#2e7d32",2:"#8d6e63",3:"#f9a825",4:"#1565c0",5:"#6a1b9a",6:"#c62828",7:"#e65100",8:"#00838f",9:"#4e342e",10:"#ad1457",11:"#37474f"};
+const COLORS = {1:"#2e7d32",2:"#8d6e63",3:"#f9a825",4:"#1565c0",5:"#6a1b9a",6:"#c62828",7:"#e65100",8:"#00838f",9:"#4e342e",10:"#ad1457",11:"#37474f",12:"#7cb342",13:"#d81b60",14:"#039be5",15:"#f57f17",16:"#00897b",17:"#e53935",18:"#3949ab",19:"#8e24aa",20:"#6d4c41",21:"#1976d2"};
 const map = L.map("map").setView([37.5,-105], 4);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {attribution:"&copy; OpenStreetMap", maxZoom:18}).addTo(map);
 let layer = L.layerGroup().addTo(map);
@@ -1473,9 +1570,13 @@ function renderCalendar() {
 
   html += `<div class="calendar-quick-months">`;
   const quicks = [
-    { name: "Agosto", y: 2026, m: 7 },
-    { name: "Septiembre", y: 2026, m: 8 },
-    { name: "Octubre", y: 2026, m: 9 }
+    { name: "Ago", y: 2026, m: 7 },
+    { name: "Sep", y: 2026, m: 8 },
+    { name: "Oct", y: 2026, m: 9 },
+    { name: "Nov", y: 2026, m: 10 },
+    { name: "Dic", y: 2026, m: 11 },
+    { name: "Ene 27", y: 2027, m: 0 },
+    { name: "Feb 27", y: 2027, m: 1 }
   ];
   quicks.forEach(q => {
     const activeClass = (year === q.y && month === q.m) ? 'active' : '';
