@@ -457,6 +457,88 @@
     border-radius: 10px;
     padding: 1px 7px;
   }
+  /* ---- ESTILOS PESTAÑA GASTOS ---- */
+  #page-expenses {
+    background: #f8fafc;
+    min-height: 100%;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #1e293b;
+  }
+  .money-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .money-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .money-card .val {
+    font-size: 28px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 4px;
+  }
+  .money-card .lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .expense-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .expense-cat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+  }
+  .expense-cat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .expense-cat-pct {
+    font-size: 11px;
+    color: #64748b;
+    margin-left: 6px;
+    font-weight: 500;
+  }
+  .expense-row-input {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .expense-row-input input, .expense-row-input select {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px;
+    color: #1e293b;
+  }
 </style>
 </head>
 <body>
@@ -466,6 +548,7 @@
   <button class="tab-btn" id="tab-shop" onclick="showTab('shop')">🛒 Compras</button>
   <button class="tab-btn" id="tab-tramites" onclick="showTab('tramites')">📄 Trámites</button>
   <button class="tab-btn" id="tab-cal" onclick="showTab('cal')">📅 Calendario</button>
+  <button class="tab-btn" id="tab-expenses" onclick="showTab('expenses')">💰 Gastos</button>
   <button class="tab-btn" style="background:#e8c14b; color:#101216;" onclick="window.open('configurador.html', '_blank')">🚙 3D Camper</button>
 </header>
 
@@ -524,6 +607,9 @@
     </div>
   </div>
   <div id="page-cal" style="display:none; height:100%; overflow-y:auto;"></div>
+  <div id="page-expenses" style="display:none; height:100%; overflow-y:auto; padding:20px;">
+    <div id="expenses-wrap"></div>
+  </div>
 </div>
 
 <div id="modal-bg">
@@ -851,7 +937,73 @@ function migrateRoute(state) {
   return true;
 }
 
-let state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3, stopsVersion: 3 };
+const EXPENSE_CATS = {
+  comida: { t: "🍔 Comida", c: "#e28743" },
+  alojamiento: { t: "🏨 Alojamiento", c: "#76b5c5" },
+  combustible: { t: "⛽ Nafta", c: "#abdbe3" },
+  seguros: { t: "🛡️ Seguros/Fronteras", c: "#eab676" },
+  darien: { t: "🚢 Darién", c: "#873e23" },
+  otros: { t: "📦 Otros/Varios", c: "#cbd5e1" }
+};
+
+const DEFAULT_BUDGET = {
+  perDayUsd: { comida: 25, alojamiento: 15, otros: 10 },
+  fuel: { pricePerLiter: 1.1, kmPerLiter: 6.5 },
+  oneOff: [
+    { name: "Seguro Darién + Ferry", amount: 1500, cat: "darien" },
+    { name: "Seguros fronteras Centroamérica", amount: 250, cat: "seguros" },
+    { name: "Mantenimiento F-150", amount: 500, cat: "otros" }
+  ],
+  contingencyPct: 10
+};
+
+function migrateExpenses(state) {
+  let hasChanges = false;
+  if (!state.budget) {
+    state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
+    hasChanges = true;
+  } else {
+    if (!state.budget.perDayUsd) {
+      state.budget.perDayUsd = JSON.parse(JSON.stringify(DEFAULT_BUDGET.perDayUsd));
+      hasChanges = true;
+    }
+    if (!state.budget.fuel) {
+      state.budget.fuel = JSON.parse(JSON.stringify(DEFAULT_BUDGET.fuel));
+      hasChanges = true;
+    }
+    if (!state.budget.oneOff) {
+      state.budget.oneOff = JSON.parse(JSON.stringify(DEFAULT_BUDGET.oneOff));
+      hasChanges = true;
+    }
+    if (state.budget.contingencyPct === undefined) {
+      state.budget.contingencyPct = DEFAULT_BUDGET.contingencyPct;
+      hasChanges = true;
+    }
+  }
+  if (!state.expenses) {
+    state.expenses = [];
+    hasChanges = true;
+  }
+  if (state.expensesVersion !== 2) {
+    state.expensesVersion = 2;
+    hasChanges = true;
+  }
+  return hasChanges;
+}
+
+let state = { 
+  stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), 
+  items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), 
+  itemsVersion: 3, 
+  stopsVersion: 3,
+  expenses: [],
+  budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
+  expensesVersion: 2
+};
+// Última foto de "items" que sabemos que coincide con Firebase (justo después de
+// leer un snapshot). save() la usa como base para un diff de 3 vías: solo lo que
+// cambió en ESTA pestaña desde esa foto se aplica sobre lo último de la nube.
+let lastSyncedItems = null;
 
 // Suscribirse a cambios en tiempo real
 db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
@@ -861,15 +1013,18 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
     const didMigrateStops = migrateStops(state.stops);
     const didMigrateItems = migrateItems(state);
     const didMigrateRoute = migrateRoute(state);
-    if (didMigrateStops || didMigrateItems || didMigrateRoute) {
+    const didMigrateExpenses = migrateExpenses(state);
+    lastSyncedItems = JSON.parse(JSON.stringify(state.items));
+    if (didMigrateStops || didMigrateItems || didMigrateRoute || didMigrateExpenses) {
       save();
     }
   } else {
     // Si es la primera vez y la base de datos está vacía, guardamos los datos por defecto
+    lastSyncedItems = JSON.parse(JSON.stringify(state.items));
     save();
   }
   renderAll();
-  
+
   if (!window.mapCentered) {
     window.mapCentered = true;
     setTimeout(() => {
@@ -881,13 +1036,49 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
   alert("Error de lectura en Firebase: " + e.message + "\n\nRevisa si tu base de datos de Firestore tiene las reglas en 'Modo Prueba'.");
 });
 
-function save(){ 
-  db.collection('mapa_ruta').doc('estado').set(state)
-    .then(() => console.log("Guardado exitoso en Firebase!"))
-    .catch(e => {
-      console.error("Error guardando en Firebase:", e);
-      alert("Error al guardar en la base de datos de Firebase: " + e.message + "\n\nRevisa si configuraste las reglas de Firestore en 'Modo Prueba' (Test Mode) para permitir escrituras.");
-    });
+// Diff de 3 vías para "items" (Compras/Trámites): compara el estado local actual
+// contra "base" (la última foto sincronizada con Firebase, ANTES de los cambios
+// de esta pestaña) para saber qué tocó realmente el usuario acá. Eso es lo único
+// que se aplica sobre "remote" (lo último que hay en la nube ahora mismo), así que
+// un ítem que otra pestaña agregó, tildó o le sacó un link mientras esta pestaña
+// estaba abierta NO se pierde, salvo que ambas hayan tocado el mismo ítem.
+function diffItemsSinceBase(baseItems, curItems) {
+  const baseByName = new Map((baseItems || []).map(it => [it.name, it]));
+  const curNames = new Set((curItems || []).map(it => it.name));
+  const changed = new Map();
+  (curItems || []).forEach(it => {
+    const b = baseByName.get(it.name);
+    if (!b || JSON.stringify(b) !== JSON.stringify(it)) changed.set(it.name, it);
+  });
+  const deleted = new Set();
+  baseByName.forEach((b, name) => { if (!curNames.has(name)) deleted.add(name); });
+  return { changed, deleted };
+}
+function applyItemsDiff(remoteItems, diff) {
+  const result = (remoteItems || [])
+    .filter(it => !diff.deleted.has(it.name))
+    .map(it => diff.changed.has(it.name) ? diff.changed.get(it.name) : it);
+  diff.changed.forEach((it, name) => { if (!result.some(x => x.name === name)) result.push(it); });
+  return result;
+}
+
+function save(){
+  const docRef = db.collection('mapa_ruta').doc('estado');
+  const itemsDiff = diffItemsSinceBase(lastSyncedItems, state.items);
+  db.runTransaction(tx => tx.get(docRef).then(doc => {
+    const remote = doc.exists ? doc.data() : {};
+    const mergedItems = applyItemsDiff(remote.items, itemsDiff);
+    const merged = Object.assign({}, remote, state, { items: mergedItems });
+    tx.set(docRef, merged);
+    return merged;
+  })).then(merged => {
+    state = merged;
+    lastSyncedItems = JSON.parse(JSON.stringify(merged.items));
+    console.log("Guardado exitoso en Firebase (fusionado)!");
+  }).catch(e => {
+    console.error("Error guardando en Firebase:", e);
+    alert("Error al guardar en la base de datos de Firebase: " + e.message + "\n\nRevisa si configuraste las reglas de Firestore en 'Modo Prueba' (Test Mode) para permitir escrituras.");
+  });
 }
 
 function exportData(){
@@ -909,7 +1100,15 @@ function importData(inp){
 }
 function resetData(){
   if(confirm("¿Volver al plan original? Se pierden todos tus cambios (paradas y compras).")){
-    state = { stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), itemsVersion: 3, stopsVersion: 3 };
+    state = { 
+      stops: JSON.parse(JSON.stringify(DEFAULT_STOPS)), 
+      items: JSON.parse(JSON.stringify(DEFAULT_ITEMS)), 
+      itemsVersion: 3, 
+      stopsVersion: 3,
+      expenses: [],
+      budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
+      expensesVersion: 2
+    };
     save(); renderAll();
   }
 }
@@ -920,15 +1119,18 @@ function showTab(t){
   document.getElementById("page-shop").style.display = t==="shop" ? "block" : "none";
   document.getElementById("page-tramites").style.display = t==="tramites" ? "block" : "none";
   document.getElementById("page-cal").style.display = t==="cal" ? "block" : "none";
+  document.getElementById("page-expenses").style.display = t==="expenses" ? "block" : "none";
   
   document.getElementById("tab-map").classList.toggle("active", t==="map");
   document.getElementById("tab-shop").classList.toggle("active", t==="shop");
   document.getElementById("tab-tramites").classList.toggle("active", t==="tramites");
   document.getElementById("tab-cal").classList.toggle("active", t==="cal");
+  document.getElementById("tab-expenses").classList.toggle("active", t==="expenses");
   
   if(t==="map") setTimeout(()=>map.invalidateSize(), 60);
   if(t==="cal") renderCalendar();
   if(t==="shop" || t==="tramites") renderShop();
+  if(t==="expenses") renderExpenses();
 }
 
 /* ================= MAPA ================= */
@@ -1484,7 +1686,12 @@ function delNote(i,k){ state.items[i].notes.splice(k,1); save(); renderShop(); }
 /* ================= UTIL ================= */
 function esc(s){ return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 
-function renderAll(){ renderMap(); renderShop(); if (document.getElementById("page-cal").style.display !== "none") renderCalendar(); }
+function renderAll(){
+  renderMap();
+  renderShop();
+  if (document.getElementById("page-cal").style.display !== "none") renderCalendar();
+  if (document.getElementById("page-expenses").style.display !== "none") renderExpenses();
+}
 
 /* ================= CALENDARIO (REJILLA MENSUAL LIGHT THEME) ================= */
 let calSelectedIdx = -1;
@@ -1537,15 +1744,22 @@ function renderCalendar() {
   html += `</div>`;
 
   html += `<div class="calendar-quick-months">`;
-  const quicks = [
-    { name: "Ago", y: 2026, m: 7 },
-    { name: "Sep", y: 2026, m: 8 },
-    { name: "Oct", y: 2026, m: 9 },
-    { name: "Nov", y: 2026, m: 10 },
-    { name: "Dic", y: 2026, m: 11 },
-    { name: "Ene 27", y: 2027, m: 0 },
-    { name: "Feb 27", y: 2027, m: 1 }
-  ];
+  const quicks = [];
+  let curr = new Date(globalMin.getFullYear(), globalMin.getMonth(), 1);
+  const endLimit = new Date(globalMax.getFullYear(), globalMax.getMonth(), 1);
+  let loopCount = 0;
+  while (curr <= endLimit && loopCount < 48) {
+    loopCount++;
+    const y = curr.getFullYear();
+    const m = curr.getMonth();
+    const suffix = y === 2026 ? "" : " '" + String(y).slice(-2);
+    quicks.push({
+      name: months[m] + suffix,
+      y: y,
+      m: m
+    });
+    curr.setMonth(curr.getMonth() + 1);
+  }
   quicks.forEach(q => {
     const activeClass = (year === q.y && month === q.m) ? 'active' : '';
     html += `<button class="calendar-quick-btn ${activeClass}" onclick="calSetMonth(${q.y}, ${q.m})">${q.name}</button>`;
@@ -1783,6 +1997,302 @@ function focusStopOnMap(idx) {
   }
 }
 
+function daysBetween(start, end) {
+  if (!start || !end) return 0;
+  const d1 = new Date(start + 'T00:00:00');
+  const d2 = new Date(end + 'T00:00:00');
+  return Math.max(1, Math.round((d2 - d1) / 86400000) + 1);
+}
+
+function computeFuelKm() {
+  let totalKm = 0;
+  const stops = state.stops || [];
+  for (let i = 0; i < stops.length - 1; i++) {
+    const s1 = stops[i];
+    const s2 = stops[i+1];
+    if (s1.lat && s1.lon && s2.lat && s2.lon) {
+      const R = 6371; // Earth radius in km
+      const dLat = (s2.lat - s1.lat) * Math.PI / 180;
+      const dLon = (s2.lon - s1.lon) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(s1.lat * Math.PI / 180) * Math.cos(s2.lat * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      totalKm += R * c;
+    }
+  }
+  return Math.round(totalKm * 1.25); // Include deviation/local detour factor
+}
+
+function computeBudgetEstimate(overrideDays) {
+  const stops = state.stops || [];
+  const realDays = stops.length > 0 ? daysBetween(stops[0].start, stops[stops.length-1].end) : 0;
+  const days = overrideDays !== null ? overrideDays : realDays;
+
+  const perDay = state.budget.perDayUsd;
+  const dailyTotal = (perDay.comida + perDay.alojamiento + perDay.otros) * days;
+
+  const km = computeFuelKm();
+  const fuelParam = state.budget.fuel;
+  const fuelTotal = (km / (fuelParam.kmPerLiter || 6.5)) * (fuelParam.pricePerLiter || 1.1);
+
+  let oneOffTotal = 0;
+  (state.budget.oneOff || []).forEach(o => {
+    oneOffTotal += o.amount || 0;
+  });
+
+  const subtotal = dailyTotal + fuelTotal + oneOffTotal;
+  const contingency = subtotal * ((state.budget.contingencyPct || 10) / 100);
+
+  return {
+    days,
+    realDays,
+    dailyTotal,
+    km,
+    fuelTotal,
+    oneOffTotal,
+    contingency,
+    total: subtotal + contingency
+  };
+}
+
+function getCategoryEstimate(cat, days) {
+  const perDay = state.budget.perDayUsd;
+  if (cat === 'comida') return perDay.comida * days;
+  if (cat === 'alojamiento') return perDay.alojamiento * days;
+  if (cat === 'otros') return perDay.otros * days;
+  if (cat === 'combustible') {
+    const km = computeFuelKm();
+    const fuelParam = state.budget.fuel;
+    return (km / (fuelParam.kmPerLiter || 6.5)) * (fuelParam.pricePerLiter || 1.1);
+  }
+  let total = 0;
+  if (cat === 'seguros' || cat === 'darien' || cat === 'otros') {
+    (state.budget.oneOff || []).forEach(o => {
+      if (o.cat === cat) total += o.amount || 0;
+    });
+  }
+  return total;
+}
+
+let tempScenarioDays = null;
+
+function renderExpenses() {
+  const container = document.getElementById("expenses-wrap");
+  if (!container) return;
+
+  const realDays = (state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0;
+  const activeDays = tempScenarioDays !== null ? tempScenarioDays : realDays;
+
+  if (!document.getElementById("expenses-skeleton")) {
+    container.innerHTML = `
+      <div id="expenses-skeleton">
+        <!-- Resumen de Dinero -->
+        <div class="money-summary">
+          <div class="money-card">
+            <div class="val" id="exp-total-val">$0.00</div>
+            <div class="lbl" id="exp-total-lbl">Estimado Total</div>
+          </div>
+          <div class="money-card">
+            <div class="val" id="exp-days-val">0</div>
+            <div class="lbl">Días Simulados</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+          <!-- COLUMNA 1: CONFIGURACION -->
+          <div>
+            <div class="expense-section-title">⚙️ Simulación y Parámetros</div>
+            
+            <!-- Escenario slider -->
+            <div class="poi-control-card" style="margin-bottom:16px;">
+              <div style="font-weight:700; font-size:13.5px; color:#1e293b; margin-bottom:8px;">Duración del viaje (días):</div>
+              <div style="display:flex; gap:12px; align-items:center;">
+                <input type="range" id="exp-slider-range" min="10" max="365" style="flex:1; cursor:pointer;" oninput="updateScenarioDays(this.value)">
+                <input type="number" id="exp-slider-num" style="width:70px; padding:6px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; text-align:center;" oninput="updateScenarioDays(this.value)">
+                <button class="stop-btn-sm" style="padding:6px 10px;" onclick="resetScenarioDays()">Reset</button>
+              </div>
+              <div style="font-size:11px; color:#64748b; margin-top:6px;">Duración real por itinerario: <b id="exp-real-days-txt">0 días</b></div>
+            </div>
+
+            <!-- Parámetros del presupuesto -->
+            <div class="poi-control-card" style="margin-bottom:16px;" id="exp-config-inputs"></div>
+          </div>
+
+          <!-- COLUMNA 2: ESTIMADOS Y CATEGORIAS -->
+          <div>
+            <div class="expense-section-title">📊 Desglose por Categoría</div>
+            <div id="exp-categories-list"></div>
+          </div>
+        </div>
+
+        <!-- Costos Puntuales Únicos (Fuera del grid, ancho completo) -->
+        <div style="margin-top: 24px;">
+          <div style="font-weight:800; font-size:13.5px; color:#1e293b; margin-bottom:8px; display:flex; justify-content:between; align-items:center;">
+            <span>Costos Puntuales Únicos</span>
+            <button class="stop-btn-sm" style="margin-left:auto; padding:3px 8px; font-size:11px;" onclick="addOneOff()">＋ Agregar</button>
+          </div>
+          <div class="poi-control-card" id="exp-oneoff-list"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  const realDaysTxt = document.getElementById("exp-real-days-txt");
+  if (realDaysTxt) realDaysTxt.innerText = `${realDays} días`;
+
+  const rangeEl = document.getElementById("exp-slider-range");
+  const numEl = document.getElementById("exp-slider-num");
+  if (rangeEl && rangeEl.value != activeDays) rangeEl.value = activeDays;
+  if (numEl && numEl.value != activeDays) numEl.value = activeDays;
+
+  const configInputs = document.getElementById("exp-config-inputs");
+  if (configInputs) {
+    configInputs.innerHTML = `
+      <div style="font-weight:800; font-size:13px; color:#1e293b; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Parámetros del Presupuesto</div>
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569;">🍔 Comida diario (USD):</label>
+          <input type="number" value="${state.budget.perDayUsd.comida}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'comida', this.value)">
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569;">🏨 Alojamiento diario (USD):</label>
+          <input type="number" value="${state.budget.perDayUsd.alojamiento}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'alojamiento', this.value)">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569;">📦 Otros diario (USD):</label>
+          <input type="number" value="${state.budget.perDayUsd.otros}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'otros', this.value)">
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569;">🛡️ Contingencia (%):</label>
+          <input type="number" value="${state.budget.contingencyPct}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('contingencyPct', '', this.value)">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569;">⛽ Precio Nafta (USD/L):</label>
+          <input type="number" step="0.05" value="${state.budget.fuel.pricePerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'pricePerLiter', this.value)">
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:700; color:#475569;">🚙 Consumo (km/L):</label>
+          <input type="number" step="0.1" value="${state.budget.fuel.kmPerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'kmPerLiter', this.value)">
+        </div>
+      </div>
+    `;
+  }
+
+  const oneOffList = document.getElementById("exp-oneoff-list");
+  if (oneOffList) {
+    if (!state.budget.oneOff || state.budget.oneOff.length === 0) {
+      oneOffList.innerHTML = `<div style="padding:15px; text-align:center; color:#94a3b8; font-size:12.5px;">No hay costos puntuales configurados.</div>`;
+    } else {
+      oneOffList.innerHTML = state.budget.oneOff.map((o, idx) => `
+        <div class="expense-row-input" style="margin-bottom:8px;">
+          <input type="text" value="${esc(o.name)}" style="flex:2; font-size:11.5px; padding:4px 6px;" onchange="state.budget.oneOff[${idx}].name = this.value; save(); renderExpenses();">
+          <input type="number" value="${o.amount}" style="width:70px; font-size:11.5px; padding:4px 6px;" onchange="updateOneOffAmount(${idx}, this.value)">
+          <select style="width:120px; font-size:11px; padding:4px 6px;" onchange="state.budget.oneOff[${idx}].cat = this.value; save(); renderExpenses();">
+            ${Object.keys(EXPENSE_CATS).map(catKey => `<option value="${catKey}" ${o.cat === catKey ? 'selected' : ''}>${EXPENSE_CATS[catKey].t.split(' ')[1] || catKey}</option>`).join('')}
+          </select>
+          <button class="btn-del" style="font-size:13px; padding:2px 6px; border:none; background:transparent; cursor:pointer;" onclick="delOneOff(${idx})">🗑️</button>
+        </div>
+      `).join('');
+    }
+  }
+
+  updateExpensesUI(activeDays);
+}
+
+function updateExpensesUI(activeDays) {
+  const est = computeBudgetEstimate(activeDays);
+
+  const totalVal = document.getElementById("exp-total-val");
+  if (totalVal) totalVal.innerText = `$${est.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const daysVal = document.getElementById("exp-days-val");
+  if (daysVal) daysVal.innerText = est.days;
+
+  const categoriesList = document.getElementById("exp-categories-list");
+  if (categoriesList) {
+    categoriesList.innerHTML = Object.keys(EXPENSE_CATS).map(c => {
+      const catEst = getCategoryEstimate(c, est.days);
+      const catPct = est.total > 0 ? (catEst / est.total) * 100 : 0;
+      return `
+        <div class="expense-cat-card">
+          <div class="expense-cat-row">
+            <span>${EXPENSE_CATS[c].t}</span>
+            <span>$${catEst.toLocaleString('en-US', { maximumFractionDigits: 0 })} <span class="expense-cat-pct">(${catPct.toFixed(0)}%)</span></span>
+          </div>
+          <div class="bar" style="height: 6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+            <div style="width: ${Math.min(100, catPct)}%; height: 100%; background: ${EXPENSE_CATS[c].c};"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function updateScenarioDays(val) {
+  const parsed = parseInt(val) || 10;
+  tempScenarioDays = parsed;
+
+  const rangeEl = document.getElementById("exp-slider-range");
+  const numEl = document.getElementById("exp-slider-num");
+  if (rangeEl && rangeEl.value != parsed) rangeEl.value = parsed;
+  if (numEl && numEl.value != parsed) numEl.value = parsed;
+
+  updateExpensesUI(parsed);
+}
+
+function resetScenarioDays() {
+  tempScenarioDays = null;
+  const realDays = (state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0;
+  
+  const rangeEl = document.getElementById("exp-slider-range");
+  const numEl = document.getElementById("exp-slider-num");
+  if (rangeEl) rangeEl.value = realDays;
+  if (numEl) numEl.value = realDays;
+
+  updateExpensesUI(realDays);
+}
+
+function updateBudgetSetting(section, key, val) {
+  if (section === 'perDayUsd') {
+    state.budget.perDayUsd[key] = parseFloat(val) || 0;
+  } else if (section === 'fuel') {
+    state.budget.fuel[key] = parseFloat(val) || 0;
+  } else if (section === 'contingencyPct') {
+    state.budget.contingencyPct = parseFloat(val) || 0;
+  }
+  save();
+  const activeDays = tempScenarioDays !== null ? tempScenarioDays : ((state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0);
+  updateExpensesUI(activeDays);
+}
+
+function updateOneOffAmount(idx, val) {
+  state.budget.oneOff[idx].amount = parseFloat(val) || 0;
+  save();
+  const activeDays = tempScenarioDays !== null ? tempScenarioDays : ((state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0);
+  updateExpensesUI(activeDays);
+}
+
+function addOneOff() {
+  if (!state.budget.oneOff) state.budget.oneOff = [];
+  state.budget.oneOff.push({ name: "Costo puntual nuevo", amount: 100, cat: "otros" });
+  save();
+  renderExpenses();
+}
+
+function delOneOff(idx) {
+  state.budget.oneOff.splice(idx, 1);
+  save();
+  renderExpenses();
+}
+
 // Controlar pestaña visible por medio del hash de la URL (#mapa, #compras, #tramites o #calendario)
 function checkHashTab() {
   const h = window.location.hash;
@@ -1792,6 +2302,8 @@ function checkHashTab() {
     showTab('tramites');
   } else if (h === '#cal' || h === '#calendario' || h === '#calendar') {
     showTab('cal');
+  } else if (h === '#gastos' || h === '#expenses') {
+    showTab('expenses');
   } else {
     showTab('map');
   }
