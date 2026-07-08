@@ -484,6 +484,11 @@
     font-family: system-ui, -apple-system, sans-serif;
     color: #1e293b;
   }
+  #expenses-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+  }
   .money-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -958,54 +963,33 @@ function migrateRoute(state) {
 }
 
 const EXPENSE_CATS = {
-  comida: { t: "🍔 Comida", c: "#e28743" },
-  alojamiento: { t: "🏨 Alojamiento", c: "#76b5c5" },
-  combustible: { t: "⛽ Nafta", c: "#abdbe3" },
-  seguros: { t: "🛡️ Seguros/Fronteras", c: "#eab676" },
-  darien: { t: "🚢 Darién", c: "#873e23" },
-  otros: { t: "📦 Otros/Varios", c: "#cbd5e1" }
+  combustible: { t: "⛽ Nafta / Combustible", c: "#dc2626" },
+  comida: { t: "🍔 Comida", c: "#16a34a" },
+  alojamiento: { t: "🏕️ Alojamiento / Camping", c: "#2563eb" },
+  pasajes: { t: "🚢 Pasajes (ferry / Darién)", c: "#7c3aed" },
+  tramites: { t: "📋 Trámites / Seguros", c: "#ea580c" },
+  otros: { t: "📁 Otros", c: "#4b5563" }
 };
 
 const DEFAULT_BUDGET = {
-  perDayUsd: { comida: 25, alojamiento: 15, otros: 10 },
-  fuel: { pricePerLiter: 1.1, kmPerLiter: 6.5 },
+  perDayUsd: { comida: 25, alojamiento: 15, otros: 5 },
+  fuel: { pricePerLiter: 0.95, kmPerLiter: 18 },
   oneOff: [
-    { name: "Seguro Darién + Ferry", amount: 1500, cat: "darien" },
-    { name: "Seguros fronteras Centroamérica", amount: 250, cat: "seguros" },
-    { name: "Mantenimiento F-150", amount: 500, cat: "otros" }
+    { name: "Pasaje Darién (auto + 2 personas)", amount: 1400, cat: "pasajes" },
+    { name: "Ferry La Paz → Mazatlán/Topolobampo", amount: 250, cat: "pasajes" },
+    { name: "TIP vehículo México (reembolsable)", amount: 400, cat: "tramites" },
+    { name: "Seguro auto México/Centroamérica", amount: 350, cat: "tramites" },
+    { name: "Seguro viajero (anual)", amount: 300, cat: "tramites" }
   ],
-  contingencyPct: 10
+  contingencyPct: 15
 };
 
 function migrateExpenses(state) {
   let hasChanges = false;
-  if (!state.budget) {
+  if (!state.expensesVersion || state.expensesVersion < 3) {
     state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
-    hasChanges = true;
-  } else {
-    if (!state.budget.perDayUsd) {
-      state.budget.perDayUsd = JSON.parse(JSON.stringify(DEFAULT_BUDGET.perDayUsd));
-      hasChanges = true;
-    }
-    if (!state.budget.fuel) {
-      state.budget.fuel = JSON.parse(JSON.stringify(DEFAULT_BUDGET.fuel));
-      hasChanges = true;
-    }
-    if (!state.budget.oneOff) {
-      state.budget.oneOff = JSON.parse(JSON.stringify(DEFAULT_BUDGET.oneOff));
-      hasChanges = true;
-    }
-    if (state.budget.contingencyPct === undefined) {
-      state.budget.contingencyPct = DEFAULT_BUDGET.contingencyPct;
-      hasChanges = true;
-    }
-  }
-  if (!state.expenses) {
     state.expenses = [];
-    hasChanges = true;
-  }
-  if (state.expensesVersion !== 2) {
-    state.expensesVersion = 2;
+    state.expensesVersion = 3;
     hasChanges = true;
   }
   return hasChanges;
@@ -1998,9 +1982,15 @@ let calDragState = null;
 
 function calHandlePointerDown(e, stopIdx) {
   if (e.button !== 0) return; // Left click only
-  const dateCell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.calendar-week-bg-cell');
-  if (!dateCell) return;
-  const startDateStr = dateCell.getAttribute('data-date');
+  
+  const weekRow = e.currentTarget.closest('.calendar-week-row');
+  if (!weekRow) return;
+  const rect = weekRow.getBoundingClientRect();
+  let colIdx = Math.floor((e.clientX - rect.left) / (rect.width / 7));
+  if (colIdx < 0) colIdx = 0;
+  if (colIdx > 6) colIdx = 6;
+  const cells = weekRow.querySelectorAll('.calendar-week-bg-cell');
+  const startDateStr = cells[colIdx]?.getAttribute('data-date');
   if (!startDateStr) return;
   
   const bar = e.currentTarget;
@@ -2020,13 +2010,18 @@ function calHandlePointerDown(e, stopIdx) {
 
 function calHandleResizeDown(e, stopIdx, edge) {
   if (e.button !== 0) return; // Left click only
-  const dateCell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.calendar-week-bg-cell');
-  if (!dateCell) return;
-  const startDateStr = dateCell.getAttribute('data-date');
+  
+  const bar = e.currentTarget.parentElement;
+  const weekRow = bar.closest('.calendar-week-row');
+  if (!weekRow) return;
+  const rect = weekRow.getBoundingClientRect();
+  let colIdx = Math.floor((e.clientX - rect.left) / (rect.width / 7));
+  if (colIdx < 0) colIdx = 0;
+  if (colIdx > 6) colIdx = 6;
+  const cells = weekRow.querySelectorAll('.calendar-week-bg-cell');
+  const startDateStr = cells[colIdx]?.getAttribute('data-date');
   if (!startDateStr) return;
   
-  const handle = e.currentTarget;
-  const bar = handle.parentElement;
   bar.setPointerCapture(e.pointerId);
   const stop = state.stops[stopIdx];
   calDragState = {
@@ -2046,9 +2041,35 @@ window.addEventListener('pointermove', e => {
   if (!calDragState) return;
   if (e.pointerId !== calDragState.pointerId) return;
   
-  const dateCell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.calendar-week-bg-cell');
-  if (!dateCell) return;
-  const currentDateStr = dateCell.getAttribute('data-date');
+  const weekRows = document.querySelectorAll('.calendar-week-row');
+  let activeWeekRow = null;
+  for (let row of weekRows) {
+    const r = row.getBoundingClientRect();
+    if (e.clientY >= r.top && e.clientY <= r.bottom) {
+      activeWeekRow = row;
+      break;
+    }
+  }
+  
+  if (!activeWeekRow && weekRows.length > 0) {
+    const firstRect = weekRows[0].getBoundingClientRect();
+    const lastRect = weekRows[weekRows.length - 1].getBoundingClientRect();
+    if (e.clientY < firstRect.top) {
+      activeWeekRow = weekRows[0];
+    } else if (e.clientY > lastRect.bottom) {
+      activeWeekRow = weekRows[weekRows.length - 1];
+    }
+  }
+  
+  if (!activeWeekRow) return;
+  
+  const cells = activeWeekRow.querySelectorAll('.calendar-week-bg-cell');
+  const r = activeWeekRow.getBoundingClientRect();
+  let colIdx = Math.floor((e.clientX - r.left) / (r.width / 7));
+  if (colIdx < 0) colIdx = 0;
+  if (colIdx > 6) colIdx = 6;
+  
+  const currentDateStr = cells[colIdx]?.getAttribute('data-date');
   if (!currentDateStr) return;
   
   const dStart = new Date(calDragState.initialPointerDate + 'T00:00:00');
