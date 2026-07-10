@@ -1001,17 +1001,34 @@ const DEFAULT_SALES = [
   { name: "Heladera portátil", price: 150, status: "en_venta" },
   { name: "Calefactor a diesel", price: 80, status: "en_venta" },
   { name: "Paneles solares", price: 550, status: "en_venta" },
-  { name: "Power station", price: 700, status: "en_venta" }
+  { name: "Power station", price: 700, status: "en_venta" },
+  { name: "Escritorio + soporte + monitor MSI 27\" curvo", price: 320, status: "en_venta" },
+  { name: "Estante de 6 cubos", price: 50, status: "en_venta" },
+  { name: "Mesa plegable para baranda", price: 40, status: "en_venta" },
+  { name: "Aparador/mueble blanco con cajones y puertas de vidrio", price: 160, status: "en_venta" },
+  { name: "Silla huevo colgante con base y almohadones", price: 200, status: "en_venta" }
 ];
 
 function migrateSales(state) {
   let hasChanges = false;
-  if (!state.sales) {
-    state.sales = JSON.parse(JSON.stringify(DEFAULT_SALES));
-    hasChanges = true;
-  }
-  if (!state.salesVersion || state.salesVersion < 1) {
-    state.salesVersion = 1;
+  if (!state.salesVersion || state.salesVersion < 2) {
+    if (!state.sales) {
+      state.sales = JSON.parse(JSON.stringify(DEFAULT_SALES));
+    } else {
+      const newItems = [
+        { name: "Escritorio + soporte + monitor MSI 27\" curvo", price: 320, status: "en_venta" },
+        { name: "Estante de 6 cubos", price: 50, status: "en_venta" },
+        { name: "Mesa plegable para baranda", price: 40, status: "en_venta" },
+        { name: "Aparador/mueble blanco con cajones y puertas de vidrio", price: 160, status: "en_venta" },
+        { name: "Silla huevo colgante con base y almohadones", price: 200, status: "en_venta" }
+      ];
+      newItems.forEach(ni => {
+        if (!state.sales.some(s => s.name === ni.name)) {
+          state.sales.push(ni);
+        }
+      });
+    }
+    state.salesVersion = 2;
     hasChanges = true;
   }
   return hasChanges;
@@ -1037,7 +1054,7 @@ let state = {
   budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
   expensesVersion: 3,
   sales: [],
-  salesVersion: 1
+  salesVersion: 2
 };
 // Última foto de "items" que sabemos que coincide con Firebase (justo después de
 // leer un snapshot). save() la usa como base para un diff de 3 vías: solo lo que
@@ -1171,7 +1188,7 @@ function resetData(){
       budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
       expensesVersion: 3,
       sales: JSON.parse(JSON.stringify(DEFAULT_SALES)),
-      salesVersion: 1
+      salesVersion: 2
     };
     save(); renderAll();
   }
