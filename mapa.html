@@ -564,11 +564,47 @@
     padding: 6px;
     color: #1e293b;
   }
+  /* ---- ESTILOS PESTAÑA TABLERO (DASHBOARD) ---- */
+  #page-dashboard {
+    background: #f8fafc;
+    min-height: 100%;
+    font-family: system-ui, -apple-system, sans-serif;
+    color: #1e293b;
+  }
+  #dashboard-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .dash-hero-card {
+    background: linear-gradient(135deg, #1565c0 0%, #1e2a32 100%);
+    color: #fff;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
+  .dash-hero-top { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .dash-hero-val { font-size: 28px; font-weight: 800; line-height:1.15; }
+  .dash-hero-lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; margin-top:2px; }
+  .dash-hero-bar { height: 12px; background: rgba(255,255,255,0.22); border-radius: 6px; overflow: hidden; }
+  .dash-hero-bar div { height: 100%; background: #f9a825; transition: width .3s; }
+  .dash-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .dash-kpi-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); text-align: center; }
+  .dash-kpi-card .val { font-size: 22px; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.15; }
+  .dash-kpi-card .lbl { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; }
+  .dash-chart-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .dash-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; font-size: 12px; color: #52514e; }
+  .dash-legend .dot, .dash-region-labels .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .dash-region-bar { display: flex; height: 24px; border-radius: 6px; overflow: hidden; gap: 2px; background: #eceff1; margin-bottom: 10px; }
+  .dash-region-bar > div { height: 100%; min-width: 2px; }
+  .dash-region-labels { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12px; color: #475569; }
 </style>
 </head>
 <body>
 <header>
   <h1>F-150 Expedition Hub</h1>
+  <button class="tab-btn" id="tab-dashboard" onclick="showTab('dashboard')">🎛️ Tablero</button>
   <button class="tab-btn active" id="tab-map" onclick="showTab('map')">🗺️ Mapa</button>
   <button class="tab-btn" id="tab-shop" onclick="showTab('shop')">🛒 Compras</button>
   <button class="tab-btn" id="tab-tramites" onclick="showTab('tramites')">📄 Trámites</button>
@@ -638,6 +674,9 @@
   </div>
   <div id="page-sales" style="display:none; height:100%; overflow-y:auto; padding:20px;">
     <div id="sales-wrap"></div>
+  </div>
+  <div id="page-dashboard" style="display:none; height:100%; overflow-y:auto;">
+    <div id="dashboard-wrap"></div>
   </div>
 </div>
 
@@ -1202,19 +1241,22 @@ function showTab(t){
   document.getElementById("page-cal").style.display = t==="cal" ? "block" : "none";
   document.getElementById("page-expenses").style.display = t==="expenses" ? "block" : "none";
   document.getElementById("page-sales").style.display = t==="sales" ? "block" : "none";
-  
+  document.getElementById("page-dashboard").style.display = t==="dashboard" ? "block" : "none";
+
   document.getElementById("tab-map").classList.toggle("active", t==="map");
   document.getElementById("tab-shop").classList.toggle("active", t==="shop");
   document.getElementById("tab-tramites").classList.toggle("active", t==="tramites");
   document.getElementById("tab-cal").classList.toggle("active", t==="cal");
   document.getElementById("tab-expenses").classList.toggle("active", t==="expenses");
   document.getElementById("tab-sales").classList.toggle("active", t==="sales");
-  
+  document.getElementById("tab-dashboard").classList.toggle("active", t==="dashboard");
+
   if(t==="map") setTimeout(()=>map.invalidateSize(), 60);
   if(t==="cal") renderCalendar();
   if(t==="shop" || t==="tramites") renderShop();
   if(t==="expenses") renderExpenses();
   if(t==="sales") renderSales();
+  if(t==="dashboard") renderDashboard();
 }
 
 /* ================= MAPA ================= */
@@ -1819,6 +1861,7 @@ function renderAll(){
   if (document.getElementById("page-cal").style.display !== "none") renderCalendar();
   if (document.getElementById("page-expenses").style.display !== "none") renderExpenses();
   if (document.getElementById("page-sales").style.display !== "none") renderSales();
+  if (document.getElementById("page-dashboard").style.display !== "none") renderDashboard();
 }
 
 /* ================= CALENDARIO (REJILLA MENSUAL LIGHT THEME) ================= */
@@ -2694,21 +2737,7 @@ function renderSales() {
   if (!container) return;
 
   const sales = state.sales || [];
-  let totalSales = 0;
-  let totalSold = 0;
-  let totalInSale = 0;
-
-  sales.forEach(s => {
-    const val = parseFloat(s.price) || 0;
-    totalSales += val;
-    if (s.status === "vendido") {
-      totalSold += val;
-    } else {
-      totalInSale += val;
-    }
-  });
-
-  const soldPct = totalSales > 0 ? (totalSold / totalSales) * 100 : 0;
+  const { totalSales, totalSold, totalInSale, soldPct } = computeSalesSummary();
 
   if (!document.getElementById("sales-skeleton")) {
     container.innerHTML = `
@@ -2842,6 +2871,332 @@ function delSaleItem(idx) {
   renderSales();
 }
 
+/* ================= DASHBOARD ================= */
+
+// No existe un campo "country" en state.stops: se infiere del nombre (n) y, en un
+// caso puntual, de la nota (note). El viaje es lineal (un país a la vez, en orden
+// cronológico) así que alcanza con esta tabla de keywords + "carry-forward".
+const COUNTRY_PATTERNS = [
+  { country: "México", re: /méxico|mexicali|,\s*(Son|BCS|BC|Sin|Nay|Jal|Qro|Chis|Pue)\.?(?=\s|—|$)/i },
+  { country: "Belice", re: /belice|belize/i },
+  { country: "Guatemala", re: /guatemala/i },
+  { country: "El Salvador", re: /el salvador/i },
+  { country: "Honduras", re: /honduras/i },
+  { country: "Nicaragua", re: /nicaragua/i },
+  { country: "Costa Rica", re: /costa rica|,\s*CR(?=\s|—|$)/i },
+  { country: "Panamá", re: /panamá|panama/i },
+  { country: "Colombia", re: /colombia/i },
+  { country: "Ecuador", re: /ecuador/i },
+  { country: "Perú", re: /per[uú]/i },
+  { country: "Bolivia", re: /bolivia/i },
+  { country: "Argentina", re: /argentina/i }
+];
+
+// Quita frases de cruce ("cruce a X" / "paso a X" / "entrada a X") del nombre antes
+// de buscar el país: así "Nogales — cruce a México" o "Villazón — cruce a Argentina"
+// NO se autoasignan el país de destino (ese día todavía cuenta del lado de origen;
+// el propio dataset lo confirma con la nota "¡Ya en Argentina!" en la parada siguiente
+// a Villazón).
+function stripCrossingPhrase(name) {
+  return String(name || "").replace(/\b(cruce|paso|entrada)\s+a\s+\S+/gi, "");
+}
+
+// Bandera de máxima prioridad: nota tipo "¡Ya en Argentina!".
+function detectNoteCountryFlag(note) {
+  const m = String(note || "").match(/ya en ([a-záéíóúñ]+(?:\s+[a-záéíóúñ]+)?)/i);
+  if (!m) return null;
+  const candidate = m[1].trim().toLowerCase();
+  const found = COUNTRY_PATTERNS.find(p => p.country.toLowerCase() === candidate);
+  return found ? found.country : null;
+}
+
+function inferStopCountry(stop, prevCountry) {
+  const flagged = detectNoteCountryFlag(stop.note);
+  if (flagged) return flagged;
+  const cleanName = stripCrossingPhrase(stop.n);
+  for (const p of COUNTRY_PATTERNS) {
+    if (p.re.test(cleanName)) return p.country;
+  }
+  return prevCountry || "Estados Unidos";
+}
+
+// Recorre las paradas (ya ordenadas cronológicamente) con un cursor de fecha,
+// recortando cada rango contra lo ya contado para no duplicar días cuando dos
+// paradas hermanas comparten fechas (ej. Yellowstone y Grand Teton). Los días de
+// tránsito entre el fin de una parada y el inicio de la siguiente (si no son
+// contiguos) se cuentan para el país de la parada anterior. Devuelve los países
+// en el orden en que aparecen por primera vez en el viaje.
+function computeCountryDays() {
+  const stops = (state.stops || []).filter(s => s.start && s.end);
+  const result = [];
+  const indexByCountry = new Map();
+  const addDays = (country, days) => {
+    if (days <= 0) return;
+    if (!indexByCountry.has(country)) {
+      indexByCountry.set(country, result.length);
+      result.push({ country, days: 0 });
+    }
+    result[indexByCountry.get(country)].days += days;
+  };
+
+  let prevCountry = "Estados Unidos";
+  let cursor = null; // último día ya contado (inclusive)
+
+  stops.forEach(stop => {
+    const country = inferStopCountry(stop, prevCountry);
+    const end = new Date(stop.end + 'T00:00:00');
+    let start = new Date(stop.start + 'T00:00:00');
+
+    if (cursor) {
+      const gapStart = new Date(cursor.getTime() + 86400000);
+      if (gapStart < start) {
+        addDays(prevCountry, Math.round((start - gapStart) / 86400000));
+      }
+      if (start <= cursor) start = new Date(cursor.getTime() + 86400000);
+    }
+
+    prevCountry = country;
+    if (start <= end) {
+      addDays(country, Math.round((end - start) / 86400000) + 1);
+      if (!cursor || end > cursor) cursor = end;
+    }
+  });
+
+  return result;
+}
+
+const REGION_BY_COUNTRY = {
+  "Estados Unidos": "EE.UU.",
+  "México": "México",
+  "Belice": "Centroamérica",
+  "Guatemala": "Centroamérica",
+  "El Salvador": "Centroamérica",
+  "Honduras": "Centroamérica",
+  "Nicaragua": "Centroamérica",
+  "Costa Rica": "Centroamérica",
+  "Panamá": "Centroamérica",
+  "Colombia": "Sudamérica",
+  "Ecuador": "Sudamérica",
+  "Perú": "Sudamérica",
+  "Bolivia": "Sudamérica",
+  "Argentina": "Sudamérica"
+};
+const REGION_ORDER = ["EE.UU.", "México", "Centroamérica", "Sudamérica"];
+const REGION_COLORS = {
+  "EE.UU.": "#2a78d6",
+  "México": "#1baf7a",
+  "Centroamérica": "#eda100",
+  "Sudamérica": "#008300"
+};
+
+function computeRegionBreakdown(countryDays) {
+  const totals = { "EE.UU.": 0, "México": 0, "Centroamérica": 0, "Sudamérica": 0 };
+  let grandTotal = 0;
+  countryDays.forEach(({ country, days }) => {
+    const region = REGION_BY_COUNTRY[country] || "Sudamérica";
+    totals[region] += days;
+    grandTotal += days;
+  });
+  return REGION_ORDER.map(region => ({
+    region,
+    days: totals[region],
+    pct: grandTotal > 0 ? (totals[region] / grandTotal) * 100 : 0
+  }));
+}
+
+// No hay campo explícito de "día de manejo" en los datos: se estima a partir de
+// las horas totales de ruta (mismo cálculo que usa el sidebar del Mapa) dividido
+// por una cantidad asumida de horas de manejo por día.
+const ASSUMED_DRIVE_HOURS_PER_DAY = 5.5;
+
+function computeTripStats() {
+  const stops = state.stops || [];
+  const withDates = stops.filter(s => s.start && s.end);
+  const tripDays = withDates.length
+    ? Math.round((Math.max(...withDates.map(s => new Date(s.end + 'T00:00:00')))
+                 - Math.min(...withDates.map(s => new Date(s.start + 'T00:00:00')))) / 86400000) + 1
+    : 0;
+
+  // Mismo cálculo que renderList() en el sidebar del Mapa (legEstimate por tramo),
+  // así el total del tablero coincide con lo que ya se ve ahí. No se reutiliza
+  // computeFuelKm() para esto: usa un factor de desvío distinto (1.25 vs 1.3 de
+  // legEstimate) y está pensada solo como insumo del presupuesto de combustible.
+  let totalKm = 0, totalHours = 0;
+  for (let i = 0; i < stops.length - 1; i++) {
+    const leg = legEstimate(stops[i], stops[i + 1]);
+    totalKm += leg.km;
+    totalHours += leg.hours;
+  }
+
+  const countryDays = computeCountryDays();
+
+  return {
+    tripDays,
+    totalKm,
+    totalHours,
+    estimatedDrivingDays: Math.ceil(totalHours / ASSUMED_DRIVE_HOURS_PER_DAY),
+    countryDays,
+    countriesCount: countryDays.length
+  };
+}
+
+function computeShopProgress() {
+  const items = (state.items || []).filter(x => x.cat !== 'tramites');
+  const done = items.filter(x => x.done).length;
+  return { done, total: items.length, pct: items.length ? Math.round(done / items.length * 100) : 0 };
+}
+
+function computeTramitesProgress() {
+  const items = (state.items || []).filter(x => x.cat === 'tramites');
+  const done = items.filter(x => x.done).length;
+  return { done, total: items.length, pct: items.length ? Math.round(done / items.length * 100) : 0 };
+}
+
+// Extraído de renderSales() para no duplicar la lógica de totales en el tablero.
+function computeSalesSummary() {
+  const sales = state.sales || [];
+  let totalSales = 0, totalSold = 0, totalInSale = 0;
+  sales.forEach(s => {
+    const val = parseFloat(s.price) || 0;
+    totalSales += val;
+    if (s.status === "vendido") totalSold += val;
+    else totalInSale += val;
+  });
+  const soldPct = totalSales > 0 ? (totalSold / totalSales) * 100 : 0;
+  return { totalSales, totalSold, totalInSale, soldPct };
+}
+
+function computeFundingPct(salesSummary, budgetEstimate) {
+  if (!budgetEstimate || !budgetEstimate.total) return 0;
+  return (salesSummary.totalSales / budgetEstimate.total) * 100;
+}
+
+function computeDepartureStatus() {
+  const stops = state.stops || [];
+  if (!stops.length) return { mode: 'sin-datos' };
+  const first = stops[0], last = stops[stops.length - 1];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = new Date(first.start + 'T00:00:00');
+  const end = new Date(last.end + 'T00:00:00');
+
+  if (today < start) {
+    return { mode: 'cuenta-regresiva', daysLeft: Math.round((start - today) / 86400000), startDate: first.start };
+  }
+  const totalDays = Math.round((end - start) / 86400000) + 1;
+  if (today <= end) {
+    const dayNumber = Math.round((today - start) / 86400000) + 1;
+    return { mode: 'en-curso', dayNumber, totalDays, pct: Math.min(100, Math.round(dayNumber / totalDays * 100)) };
+  }
+  return { mode: 'finalizado', totalDays };
+}
+
+// Gráfico de barras horizontales de días por país (evita rotar 14 etiquetas largas
+// como haría un gráfico vertical). Color por región (mismos 4 colores que la barra
+// de composición por región), en orden cronológico de aparición en el viaje.
+function buildCountryBarChartSVG(countryDays) {
+  const rowH = 20, gap = 6, labelW = 118, chartW = 380, padTop = 6, padSide = 8;
+  const maxDays = Math.max(1, ...countryDays.map(c => c.days));
+  const svgW = labelW + chartW + padSide + 46;
+  const svgH = padTop * 2 + countryDays.length * (rowH + gap) - gap;
+
+  const rows = countryDays.map((c, i) => {
+    const region = REGION_BY_COUNTRY[c.country] || 'Sudamérica';
+    const color = REGION_COLORS[region] || '#52514e';
+    const y = padTop + i * (rowH + gap);
+    const barW = Math.max(4, (c.days / maxDays) * chartW);
+    return `<text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="11.5" fill="#52514e">${esc(c.country)}</text>` +
+           `<rect x="${labelW}" y="${y}" width="${barW}" height="${rowH}" rx="4" fill="${color}"></rect>` +
+           `<text x="${labelW + barW + 6}" y="${y + rowH / 2 + 4}" font-size="11.5" font-weight="700" fill="#0b0b0b">${c.days}d</text>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="${svgH}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Días por país">${rows}</svg>`;
+}
+
+function renderDashboard() {
+  const container = document.getElementById("dashboard-wrap");
+  if (!container) return;
+
+  const trip = computeTripStats();
+  const shop = computeShopProgress();
+  const tramites = computeTramitesProgress();
+  const budget = computeBudgetEstimate(trip.tripDays);
+  const sales = computeSalesSummary();
+  const fundingPct = computeFundingPct(sales, budget);
+  const departure = computeDepartureStatus();
+  const regionBreakdown = computeRegionBreakdown(trip.countryDays);
+
+  const money = n => `$${Math.round(n).toLocaleString('es-AR')}`;
+
+  let heroHtml;
+  if (departure.mode === 'cuenta-regresiva') {
+    heroHtml = `<div class="dash-hero-top"><div><div class="dash-hero-val">🚀 ${departure.daysLeft} días</div><div class="dash-hero-lbl">Para la salida — ${esc(formatDateRange(departure.startDate, departure.startDate))}</div></div></div>`;
+  } else if (departure.mode === 'en-curso') {
+    heroHtml = `<div class="dash-hero-top"><div><div class="dash-hero-val">🚗 Día ${departure.dayNumber} de ${departure.totalDays}</div><div class="dash-hero-lbl">Viaje en curso — ${departure.pct}%</div></div></div><div class="dash-hero-bar"><div style="width:${departure.pct}%"></div></div>`;
+  } else if (departure.mode === 'finalizado') {
+    heroHtml = `<div class="dash-hero-top"><div><div class="dash-hero-val">🏁 Viaje completado</div><div class="dash-hero-lbl">${departure.totalDays} días recorridos</div></div></div>`;
+  } else {
+    heroHtml = `<div class="dash-hero-top"><div><div class="dash-hero-val">Sin itinerario cargado</div></div></div>`;
+  }
+
+  const kpis = [
+    { val: trip.tripDays, lbl: 'Días de viaje' },
+    { val: Math.round(trip.totalKm).toLocaleString('es-AR') + ' km', lbl: 'Km totales de ruta' },
+    { val: `~${trip.estimatedDrivingDays} días`, lbl: 'Manejo estimado' },
+    { val: `${shop.pct}%`, lbl: `Compras (${shop.done}/${shop.total})` },
+    { val: `${tramites.pct}%`, lbl: `Trámites (${tramites.done}/${tramites.total})` },
+    { val: money(budget.total), lbl: 'Gastos estipulados' },
+    { val: money(sales.totalSales), lbl: 'Ventas estipuladas' },
+    // — Recomendados —
+    { val: trip.countriesCount, lbl: 'Países visitados' },
+    { val: `${fundingPct.toFixed(0)}%`, lbl: 'Viaje financiado c/ventas' }
+  ];
+  const kpiHtml = kpis.map(k => `<div class="dash-kpi-card"><div class="val">${k.val}</div><div class="lbl">${k.lbl}</div></div>`).join('');
+
+  const legendHtml = REGION_ORDER.map(r => `<span><span class="dot" style="background:${REGION_COLORS[r]}"></span>${r}</span>`).join('');
+
+  const regionWithDays = regionBreakdown.filter(r => r.days > 0);
+  const regionBarHtml = regionWithDays.map(r => `<div style="width:${r.pct}%; background:${REGION_COLORS[r.region]};" title="${r.region}: ${r.days} días (${r.pct.toFixed(0)}%)"></div>`).join('');
+  const regionLabelsHtml = regionWithDays.map(r => `<span><span class="dot" style="background:${REGION_COLORS[r.region]};"></span>${r.region}: ${r.days}d (${r.pct.toFixed(0)}%)</span>`).join('');
+
+  const contingencyFactor = 1 + (state.budget.contingencyPct || 15) / 100;
+  const catHtml = Object.keys(EXPENSE_CATS).map(c => {
+    const catEst = getCategoryEstimate(c, trip.tripDays) * contingencyFactor;
+    const catPct = budget.total > 0 ? (catEst / budget.total) * 100 : 0;
+    return `<div class="expense-cat-card">
+      <div class="expense-cat-row">
+        <span><span style="color:${EXPENSE_CATS[c].c}; margin-right:6px;">●</span>${EXPENSE_CATS[c].t}</span>
+        <span>${money(catEst)} <span class="expense-cat-pct">(${catPct.toFixed(1)}%)</span></span>
+      </div>
+      <div class="bar" style="height: 6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
+        <div style="width: ${Math.min(100, catPct)}%; height: 100%; background: ${EXPENSE_CATS[c].c};"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="dash-hero-card">${heroHtml}</div>
+    <div class="dash-kpi-grid">${kpiHtml}</div>
+
+    <div class="dash-chart-card">
+      <div class="expense-section-title">🌎 Días por país</div>
+      <div class="dash-legend">${legendHtml}</div>
+      ${buildCountryBarChartSVG(trip.countryDays)}
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px;">
+      <div class="dash-chart-card">
+        <div class="expense-section-title">🗺️ Composición del viaje por región</div>
+        <div class="dash-region-bar">${regionBarHtml}</div>
+        <div class="dash-region-labels">${regionLabelsHtml}</div>
+      </div>
+      <div class="dash-chart-card">
+        <div class="expense-section-title">💵 Gasto estipulado por categoría</div>
+        ${catHtml}
+      </div>
+    </div>
+  `;
+}
+
 // Controlar pestaña visible por medio del hash de la URL (#mapa, #compras, #tramites o #calendario)
 function checkHashTab() {
   const h = window.location.hash;
@@ -2855,6 +3210,8 @@ function checkHashTab() {
     showTab('expenses');
   } else if (h === '#ventas' || h === '#sales') {
     showTab('sales');
+  } else if (h === '#dashboard' || h === '#tablero') {
+    showTab('dashboard');
   } else {
     showTab('map');
   }
