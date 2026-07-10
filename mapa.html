@@ -574,6 +574,7 @@
   <button class="tab-btn" id="tab-tramites" onclick="showTab('tramites')">📄 Trámites</button>
   <button class="tab-btn" id="tab-cal" onclick="showTab('cal')">📅 Calendario</button>
   <button class="tab-btn" id="tab-expenses" onclick="showTab('expenses')">💰 Gastos</button>
+  <button class="tab-btn" id="tab-sales" onclick="showTab('sales')">🏷️ Ventas</button>
   <button class="tab-btn" style="background:#e8c14b; color:#101216;" onclick="window.open('configurador.html', '_blank')">🚙 3D Camper</button>
 </header>
 
@@ -634,6 +635,9 @@
   <div id="page-cal" style="display:none; height:100%; overflow-y:auto;"></div>
   <div id="page-expenses" style="display:none; height:100%; overflow-y:auto; padding:20px;">
     <div id="expenses-wrap"></div>
+  </div>
+  <div id="page-sales" style="display:none; height:100%; overflow-y:auto; padding:20px;">
+    <div id="sales-wrap"></div>
   </div>
 </div>
 
@@ -984,6 +988,35 @@ const DEFAULT_BUDGET = {
   contingencyPct: 15
 };
 
+const DEFAULT_SALES = [
+  { name: "Sofá cama grande", price: 600, status: "en_venta" },
+  { name: "Proyector", price: 150, status: "en_venta" },
+  { name: "Mesa y sillas plegables", price: 80, status: "en_venta" },
+  { name: "Juego de dardos", price: 60, status: "en_venta" },
+  { name: "Cocina de camping", price: 45, status: "en_venta" },
+  { name: "Espejo de pie", price: 90, status: "en_venta" },
+  { name: "Mesa ratona con guardado", price: 70, status: "en_venta" },
+  { name: "Heladera portátil", price: 150, status: "en_venta" },
+  { name: "Tanque de agua", price: 380, status: "en_venta" },
+  { name: "Heladera portátil", price: 150, status: "en_venta" },
+  { name: "Calefactor a diesel", price: 80, status: "en_venta" },
+  { name: "Paneles solares", price: 550, status: "en_venta" },
+  { name: "Power station", price: 700, status: "en_venta" }
+];
+
+function migrateSales(state) {
+  let hasChanges = false;
+  if (!state.sales) {
+    state.sales = JSON.parse(JSON.stringify(DEFAULT_SALES));
+    hasChanges = true;
+  }
+  if (!state.salesVersion || state.salesVersion < 1) {
+    state.salesVersion = 1;
+    hasChanges = true;
+  }
+  return hasChanges;
+}
+
 function migrateExpenses(state) {
   let hasChanges = false;
   if (!state.expensesVersion || state.expensesVersion < 3) {
@@ -1002,7 +1035,9 @@ let state = {
   stopsVersion: 3,
   expenses: [],
   budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-  expensesVersion: 3
+  expensesVersion: 3,
+  sales: [],
+  salesVersion: 1
 };
 // Última foto de "items" que sabemos que coincide con Firebase (justo después de
 // leer un snapshot). save() la usa como base para un diff de 3 vías: solo lo que
@@ -1018,8 +1053,9 @@ db.collection('mapa_ruta').doc('estado').onSnapshot(doc => {
     const didMigrateItems = migrateItems(state);
     const didMigrateRoute = migrateRoute(state);
     const didMigrateExpenses = migrateExpenses(state);
+    const didMigrateSales = migrateSales(state);
     lastSyncedItems = JSON.parse(JSON.stringify(state.items));
-    if (didMigrateStops || didMigrateItems || didMigrateRoute || didMigrateExpenses) {
+    if (didMigrateStops || didMigrateItems || didMigrateRoute || didMigrateExpenses || didMigrateSales) {
       save();
     }
   } else {
@@ -1133,7 +1169,9 @@ function resetData(){
       stopsVersion: 3,
       expenses: [],
       budget: JSON.parse(JSON.stringify(DEFAULT_BUDGET)),
-      expensesVersion: 3
+      expensesVersion: 3,
+      sales: JSON.parse(JSON.stringify(DEFAULT_SALES)),
+      salesVersion: 1
     };
     save(); renderAll();
   }
@@ -1146,17 +1184,20 @@ function showTab(t){
   document.getElementById("page-tramites").style.display = t==="tramites" ? "block" : "none";
   document.getElementById("page-cal").style.display = t==="cal" ? "block" : "none";
   document.getElementById("page-expenses").style.display = t==="expenses" ? "block" : "none";
+  document.getElementById("page-sales").style.display = t==="sales" ? "block" : "none";
   
   document.getElementById("tab-map").classList.toggle("active", t==="map");
   document.getElementById("tab-shop").classList.toggle("active", t==="shop");
   document.getElementById("tab-tramites").classList.toggle("active", t==="tramites");
   document.getElementById("tab-cal").classList.toggle("active", t==="cal");
   document.getElementById("tab-expenses").classList.toggle("active", t==="expenses");
+  document.getElementById("tab-sales").classList.toggle("active", t==="sales");
   
   if(t==="map") setTimeout(()=>map.invalidateSize(), 60);
   if(t==="cal") renderCalendar();
   if(t==="shop" || t==="tramites") renderShop();
   if(t==="expenses") renderExpenses();
+  if(t==="sales") renderSales();
 }
 
 /* ================= MAPA ================= */
@@ -1760,6 +1801,7 @@ function renderAll(){
   renderShop();
   if (document.getElementById("page-cal").style.display !== "none") renderCalendar();
   if (document.getElementById("page-expenses").style.display !== "none") renderExpenses();
+  if (document.getElementById("page-sales").style.display !== "none") renderSales();
 }
 
 /* ================= CALENDARIO (REJILLA MENSUAL LIGHT THEME) ================= */
@@ -2630,6 +2672,156 @@ function delOneOff(idx) {
   renderExpenses();
 }
 
+function renderSales() {
+  const container = document.getElementById("sales-wrap");
+  if (!container) return;
+
+  const sales = state.sales || [];
+  let totalSales = 0;
+  let totalSold = 0;
+  let totalInSale = 0;
+
+  sales.forEach(s => {
+    const val = parseFloat(s.price) || 0;
+    totalSales += val;
+    if (s.status === "vendido") {
+      totalSold += val;
+    } else {
+      totalInSale += val;
+    }
+  });
+
+  const soldPct = totalSales > 0 ? (totalSold / totalSales) * 100 : 0;
+
+  if (!document.getElementById("sales-skeleton")) {
+    container.innerHTML = `
+      <div id="sales-skeleton">
+        <!-- Resumen de Dinero -->
+        <div class="money-summary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+          <div class="money-card">
+            <div class="val" id="sales-total-val">$0,00</div>
+            <div class="lbl">Total Estimado</div>
+          </div>
+          <div class="money-card">
+            <div class="val" id="sales-sold-val" style="color: #16a34a;">$0,00</div>
+            <div class="lbl">Total Vendido</div>
+          </div>
+          <div class="money-card">
+            <div class="val" id="sales-insale-val" style="color: #2563eb;">$0,00</div>
+            <div class="lbl">En Venta</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+          <!-- COLUMNA 1: CONTROL DE ITEMS -->
+          <div>
+            <div style="font-weight:800; font-size:15px; color:#1e293b; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+              <span>🏷️ Control de Artículos</span>
+              <button class="stop-btn-sm" style="padding:3px 8px; font-size:11px;" onclick="addSaleItem()">＋ Agregar</button>
+            </div>
+            <div class="poi-control-card" id="sales-items-list" style="max-height: 500px; overflow-y: auto;"></div>
+          </div>
+
+          <!-- COLUMNA 2: RESUMEN Y PROGRESO -->
+          <div>
+            <div class="expense-section-title">📊 Resumen de Ventas</div>
+            <div class="poi-control-card" style="margin-bottom: 16px;">
+              <div style="font-weight:700; font-size:13.5px; color:#1e293b; margin-bottom:8px;">Progreso de Venta:</div>
+              <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px; margin-bottom:4px;">
+                <span style="color:#16a34a;">Vendido</span>
+                <span id="sales-pct-txt">0%</span>
+              </div>
+              <div class="bar" style="height: 12px; background:#f1f5f9; border-radius:6px; overflow:hidden;">
+                <div id="sales-progress-bar" style="width: 0%; height: 100%; background: #16a34a; transition: width 0.3s ease;"></div>
+              </div>
+              <div style="font-size:11px; color:#64748b; margin-top:8px;">
+                Ayuda a financiar el viaje vendiendo el equipamiento sobrante.
+              </div>
+            </div>
+
+            <div class="expense-section-title">📦 Artículos Vendidos</div>
+            <div class="poi-control-card" id="sales-sold-list" style="max-height: 200px; overflow-y: auto; background: #f8fafc;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Update numbers
+  document.getElementById("sales-total-val").innerText = `$${totalSales.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.getElementById("sales-sold-val").innerText = `$${totalSold.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.getElementById("sales-insale-val").innerText = `$${totalInSale.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  document.getElementById("sales-pct-txt").innerText = `${soldPct.toFixed(1)}%`;
+  document.getElementById("sales-progress-bar").style.width = `${soldPct}%`;
+
+  // Render items list
+  const listEl = document.getElementById("sales-items-list");
+  if (listEl) {
+    if (sales.length === 0) {
+      listEl.innerHTML = `<div style="padding:15px; text-align:center; color:#94a3b8; font-size:12.5px;">No hay artículos configurados.</div>`;
+    } else {
+      listEl.innerHTML = sales.map((s, idx) => `
+        <div class="expense-row-input" style="margin-bottom:8px;">
+          <input type="text" value="${esc(s.name)}" style="flex:2; font-size:11.5px; padding:4px 6px;" onchange="updateSaleName(${idx}, this.value)">
+          <input type="number" value="${s.price}" style="width:70px; font-size:11.5px; padding:4px 6px;" onchange="updateSalePrice(${idx}, this.value)">
+          <select style="width:110px; font-size:11px; padding:4px 6px;" onchange="updateSaleStatus(${idx}, this.value)">
+            <option value="en_venta" ${s.status === "en_venta" ? 'selected' : ''}>En venta</option>
+            <option value="vendido" ${s.status === "vendido" ? 'selected' : ''}>Vendido</option>
+          </select>
+          <button class="stop-btn-sm" style="font-size:13px; padding:4px 8px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:6px; cursor:pointer;" onclick="delSaleItem(${idx})">🗑️</button>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Render sold list
+  const soldListEl = document.getElementById("sales-sold-list");
+  if (soldListEl) {
+    const soldItems = sales.filter(s => s.status === "vendido");
+    if (soldItems.length === 0) {
+      soldListEl.innerHTML = `<div style="padding:10px; text-align:center; color:#94a3b8; font-size:11.5px;">Ningún artículo vendido todavía.</div>`;
+    } else {
+      soldListEl.innerHTML = soldItems.map(s => `
+        <div style="display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid #e2e8f0; color:#475569;">
+          <span>✔️ ${esc(s.name)}</span>
+          <span style="font-weight:bold; color:#16a34a;">+$${(parseFloat(s.price)||0).toLocaleString('es-AR', { maximumFractionDigits: 0 })}</span>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function updateSaleName(idx, val) {
+  state.sales[idx].name = val;
+  save();
+  renderSales();
+}
+
+function updateSalePrice(idx, val) {
+  state.sales[idx].price = parseFloat(val) || 0;
+  save();
+  renderSales();
+}
+
+function updateSaleStatus(idx, val) {
+  state.sales[idx].status = val;
+  save();
+  renderSales();
+}
+
+function addSaleItem() {
+  if (!state.sales) state.sales = [];
+  state.sales.push({ name: "Artículo nuevo", price: 100, status: "en_venta" });
+  save();
+  renderSales();
+}
+
+function delSaleItem(idx) {
+  state.sales.splice(idx, 1);
+  save();
+  renderSales();
+}
+
 // Controlar pestaña visible por medio del hash de la URL (#mapa, #compras, #tramites o #calendario)
 function checkHashTab() {
   const h = window.location.hash;
@@ -2641,6 +2833,8 @@ function checkHashTab() {
     showTab('cal');
   } else if (h === '#gastos' || h === '#expenses') {
     showTab('expenses');
+  } else if (h === '#ventas' || h === '#sales') {
+    showTab('sales');
   } else {
     showTab('map');
   }
