@@ -2777,15 +2777,18 @@ function renderSales() {
     if (sales.length === 0) {
       listEl.innerHTML = `<div style="padding:15px; text-align:center; color:#94a3b8; font-size:12.5px;">No hay artículos configurados.</div>`;
     } else {
-      listEl.innerHTML = sales.map((s, idx) => `
+      const sortedSales = sales.map((s, idx) => ({ s, originalIdx: idx }));
+      sortedSales.sort((a, b) => (parseFloat(b.s.price) || 0) - (parseFloat(a.s.price) || 0));
+
+      listEl.innerHTML = sortedSales.map(({ s, originalIdx }) => `
         <div class="expense-row-input" style="margin-bottom:8px;">
-          <input type="text" value="${esc(s.name)}" style="flex:2; font-size:11.5px; padding:4px 6px;" onchange="updateSaleName(${idx}, this.value)">
-          <input type="number" value="${s.price}" style="width:70px; font-size:11.5px; padding:4px 6px;" onchange="updateSalePrice(${idx}, this.value)">
-          <select style="width:110px; font-size:11px; padding:4px 6px;" onchange="updateSaleStatus(${idx}, this.value)">
+          <input type="text" value="${esc(s.name)}" style="flex:2; font-size:11.5px; padding:4px 6px;" onchange="updateSaleName(${originalIdx}, this.value)">
+          <input type="number" value="${s.price}" style="width:70px; font-size:11.5px; padding:4px 6px;" onchange="updateSalePrice(${originalIdx}, this.value)">
+          <select style="width:110px; font-size:11px; padding:4px 6px;" onchange="updateSaleStatus(${originalIdx}, this.value)">
             <option value="en_venta" ${s.status === "en_venta" ? 'selected' : ''}>En venta</option>
             <option value="vendido" ${s.status === "vendido" ? 'selected' : ''}>Vendido</option>
           </select>
-          <button class="stop-btn-sm" style="font-size:13px; padding:4px 8px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:6px; cursor:pointer;" onclick="delSaleItem(${idx})">🗑️</button>
+          <button class="stop-btn-sm" style="font-size:13px; padding:4px 8px; border:1px solid #cbd5e1; background:#f8fafc; border-radius:6px; cursor:pointer;" onclick="delSaleItem(${originalIdx})">🗑️</button>
         </div>
       `).join('');
     }
