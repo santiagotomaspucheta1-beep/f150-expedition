@@ -589,16 +589,28 @@
   .dash-hero-lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; margin-top:2px; }
   .dash-hero-bar { height: 12px; background: rgba(255,255,255,0.22); border-radius: 6px; overflow: hidden; }
   .dash-hero-bar div { height: 100%; background: #f9a825; transition: width .3s; }
-  .dash-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 24px; }
-  .dash-kpi-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); text-align: center; }
-  .dash-kpi-card .val { font-size: 22px; font-weight: 800; color: #1e293b; margin-bottom: 4px; line-height: 1.15; }
-  .dash-kpi-card .lbl { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; }
+  /* Grupos temáticos de KPIs (Itinerario / Preparativos / Finanzas) */
+  .dash-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 20px; align-items: start; }
+  .dash-group { background: #ffffff; border: 1px solid #e2e8f0; border-top: 3px solid var(--dash-accent, #1565c0); border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+  .dash-group-title { font-size: 12.5px; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
+  .dash-group-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 14px 10px; }
+  .dash-tile { text-align: center; }
+  .dash-tile .val { font-size: 20px; font-weight: 800; color: #1e293b; line-height: 1.15; }
+  .dash-tile .lbl { font-size: 10.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 3px; }
+  .dash-tile .sub { font-size: 10.5px; color: #94a3b8; margin-top: 1px; }
+  .dash-tile .bar { margin: 7px auto 0; height: 5px; max-width: 90px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+  .dash-tile .bar div { height: 100%; transition: width .3s; }
   .dash-chart-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
   .dash-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; font-size: 12px; color: #52514e; }
-  .dash-legend .dot, .dash-region-labels .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
-  .dash-region-bar { display: flex; height: 24px; border-radius: 6px; overflow: hidden; gap: 2px; background: #eceff1; margin-bottom: 10px; }
-  .dash-region-bar > div { height: 100%; min-width: 2px; }
-  .dash-region-labels { display: flex; flex-wrap: wrap; gap: 10px 16px; font-size: 12px; color: #475569; }
+  .dash-legend .dot, .dash-donut-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 7px; flex-shrink: 0; }
+  /* Gráficos de dona (composición por región / gasto por categoría) */
+  .dash-donut-row { display: flex; gap: 22px; flex-wrap: wrap; align-items: center; }
+  .dash-donut-row svg { flex-shrink: 0; }
+  .dash-donut-legend { flex: 1; min-width: 190px; display: flex; flex-direction: column; gap: 9px; }
+  .dash-donut-legend-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12.5px; color: #334155; }
+  .dash-donut-legend-item .name { display: flex; align-items: center; }
+  .dash-donut-legend-item .amt { font-weight: 700; color: #1e293b; white-space: nowrap; }
+  .dash-donut-legend-item .pct { font-size: 11px; color: #94a3b8; margin-left: 5px; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -3112,6 +3124,34 @@ function buildCountryBarChartSVG(countryDays) {
   return `<svg viewBox="0 0 ${svgW} ${svgH}" width="100%" height="${svgH}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Días por país">${rows}</svg>`;
 }
 
+// Gráfico de dona genérico (composición por región / gasto por categoría): un
+// anillo por segmento (stroke-dasharray sobre un círculo), con un pequeño hueco de
+// separación entre segmentos y un valor central. Los % y montos exactos se leen en
+// la leyenda de al lado (más preciso que etiquetar cada porción sobre el anillo).
+function buildDonutChartSVG(segments, centerLabel, centerSub) {
+  const size = 168, stroke = 26, gapDeg = 2.2;
+  const r = (size - stroke) / 2, cx = size / 2, cy = size / 2;
+  const circumference = 2 * Math.PI * r;
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+
+  let cursorDeg = -90;
+  const arcs = segments.filter(s => s.value > 0).map(seg => {
+    const segDeg = (seg.value / total) * 360;
+    const drawDeg = Math.max(0, segDeg - (segments.length > 1 ? gapDeg : 0));
+    const dash = (drawDeg / 360) * circumference;
+    const rotate = cursorDeg;
+    cursorDeg += segDeg;
+    return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${seg.color}" stroke-width="${stroke}" stroke-dasharray="${dash} ${circumference - dash}" transform="rotate(${rotate} ${cx} ${cy})"></circle>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gráfico de composición">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef1f4" stroke-width="${stroke}"></circle>
+    ${arcs}
+    <text x="${cx}" y="${cy - 3}" text-anchor="middle" font-size="18" font-weight="800" fill="#0b0b0b">${esc(String(centerLabel))}</text>
+    <text x="${cx}" y="${cy + 15}" text-anchor="middle" font-size="10" fill="#64748b">${esc(String(centerSub))}</text>
+  </svg>`;
+}
+
 function renderDashboard() {
   const container = document.getElementById("dashboard-wrap");
   if (!container) return;
@@ -3138,44 +3178,79 @@ function renderDashboard() {
     heroHtml = `<div class="dash-hero-top"><div><div class="dash-hero-val">Sin itinerario cargado</div></div></div>`;
   }
 
-  const kpis = [
+  // — Grupo 1: Itinerario —
+  const itinerarioHtml = [
     { val: trip.tripDays, lbl: 'Días de viaje' },
-    { val: Math.round(trip.totalKm).toLocaleString('es-AR') + ' km', lbl: 'Km totales de ruta' },
-    { val: `~${trip.estimatedDrivingDays} días`, lbl: 'Manejo estimado' },
-    { val: `${shop.pct}%`, lbl: `Compras (${shop.done}/${shop.total})` },
-    { val: `${tramites.pct}%`, lbl: `Trámites (${tramites.done}/${tramites.total})` },
-    { val: money(budget.total), lbl: 'Gastos estipulados' },
-    { val: money(sales.totalSales), lbl: 'Ventas estipuladas' },
-    // — Recomendados —
-    { val: trip.countriesCount, lbl: 'Países visitados' },
-    { val: `${fundingPct.toFixed(0)}%`, lbl: 'Viaje financiado c/ventas' }
-  ];
-  const kpiHtml = kpis.map(k => `<div class="dash-kpi-card"><div class="val">${k.val}</div><div class="lbl">${k.lbl}</div></div>`).join('');
+    { val: Math.round(trip.totalKm).toLocaleString('es-AR'), sub: 'km', lbl: 'Km de ruta' },
+    { val: `~${trip.estimatedDrivingDays}`, sub: 'días', lbl: 'Manejo estimado' },
+    { val: trip.countriesCount, lbl: 'Países visitados' }
+  ].map(k => `<div class="dash-tile"><div class="val">${k.val}</div>${k.sub ? `<div class="sub">${k.sub}</div>` : ''}<div class="lbl">${k.lbl}</div></div>`).join('');
+
+  // — Grupo 2: Preparativos (con mini-barra de progreso) —
+  const prepTile = (pct, doneTotal, lbl, color) => `<div class="dash-tile">
+      <div class="val">${pct}%</div>
+      <div class="bar"><div style="width:${pct}%; background:${color};"></div></div>
+      <div class="lbl">${lbl}</div><div class="sub">${doneTotal}</div>
+    </div>`;
+  const preparativosHtml =
+    prepTile(shop.pct, `${shop.done}/${shop.total}`, 'Compras', '#16a34a') +
+    prepTile(tramites.pct, `${tramites.done}/${tramites.total}`, 'Trámites', '#ea580c');
+
+  // — Grupo 3: Finanzas —
+  const financeTile = (fundingPct > 0)
+    ? `<div class="dash-tile"><div class="val">${fundingPct.toFixed(0)}%</div><div class="bar"><div style="width:${Math.min(100, fundingPct)}%; background:#7c3aed;"></div></div><div class="lbl">Financiado c/ventas</div></div>`
+    : `<div class="dash-tile"><div class="val">0%</div><div class="bar"><div style="width:0%; background:#7c3aed;"></div></div><div class="lbl">Financiado c/ventas</div></div>`;
+  const finanzasHtml =
+    `<div class="dash-tile"><div class="val">${money(budget.total)}</div><div class="lbl">Gastos estipulados</div></div>` +
+    `<div class="dash-tile"><div class="val">${money(sales.totalSales)}</div><div class="lbl">Ventas estipuladas</div></div>` +
+    financeTile;
 
   const legendHtml = REGION_ORDER.map(r => `<span><span class="dot" style="background:${REGION_COLORS[r]}"></span>${r}</span>`).join('');
 
+  // — Dona: composición por región —
   const regionWithDays = regionBreakdown.filter(r => r.days > 0);
-  const regionBarHtml = regionWithDays.map(r => `<div style="width:${r.pct}%; background:${REGION_COLORS[r.region]};" title="${r.region}: ${r.days} días (${r.pct.toFixed(0)}%)"></div>`).join('');
-  const regionLabelsHtml = regionWithDays.map(r => `<span><span class="dot" style="background:${REGION_COLORS[r.region]};"></span>${r.region}: ${r.days}d (${r.pct.toFixed(0)}%)</span>`).join('');
+  const regionDonut = buildDonutChartSVG(
+    regionWithDays.map(r => ({ value: r.days, color: REGION_COLORS[r.region] })),
+    trip.tripDays, 'días totales'
+  );
+  const regionLegendHtml = regionWithDays.map(r => `<div class="dash-donut-legend-item">
+      <span class="name"><span class="dot" style="background:${REGION_COLORS[r.region]};"></span>${r.region}</span>
+      <span class="amt">${r.days}d <span class="pct">(${r.pct.toFixed(0)}%)</span></span>
+    </div>`).join('');
 
+  // — Dona: gasto estipulado por categoría —
   const contingencyFactor = 1 + (state.budget.contingencyPct || 15) / 100;
-  const catHtml = Object.keys(EXPENSE_CATS).map(c => {
+  const catData = Object.keys(EXPENSE_CATS).map(c => {
     const catEst = getCategoryEstimate(c, trip.tripDays) * contingencyFactor;
     const catPct = budget.total > 0 ? (catEst / budget.total) * 100 : 0;
-    return `<div class="expense-cat-card">
-      <div class="expense-cat-row">
-        <span><span style="color:${EXPENSE_CATS[c].c}; margin-right:6px;">●</span>${EXPENSE_CATS[c].t}</span>
-        <span>${money(catEst)} <span class="expense-cat-pct">(${catPct.toFixed(1)}%)</span></span>
-      </div>
-      <div class="bar" style="height: 6px; background:#f1f5f9; border-radius:3px; overflow:hidden;">
-        <div style="width: ${Math.min(100, catPct)}%; height: 100%; background: ${EXPENSE_CATS[c].c};"></div>
-      </div>
-    </div>`;
-  }).join('');
+    return { key: c, label: EXPENSE_CATS[c].t, color: EXPENSE_CATS[c].c, amount: catEst, pct: catPct };
+  });
+  const catDonut = buildDonutChartSVG(
+    catData.map(c => ({ value: c.amount, color: c.color })),
+    money(budget.total), 'total estipulado'
+  );
+  const catLegendHtml = catData.map(c => `<div class="dash-donut-legend-item">
+      <span class="name"><span class="dot" style="background:${c.color};"></span>${c.label}</span>
+      <span class="amt">${money(c.amount)} <span class="pct">(${c.pct.toFixed(0)}%)</span></span>
+    </div>`).join('');
 
   container.innerHTML = `
     <div class="dash-hero-card">${heroHtml}</div>
-    <div class="dash-kpi-grid">${kpiHtml}</div>
+
+    <div class="dash-groups">
+      <div class="dash-group" style="--dash-accent:#1565c0;">
+        <div class="dash-group-title">🗺️ Itinerario</div>
+        <div class="dash-group-grid">${itinerarioHtml}</div>
+      </div>
+      <div class="dash-group" style="--dash-accent:#16a34a;">
+        <div class="dash-group-title">✅ Preparativos</div>
+        <div class="dash-group-grid">${preparativosHtml}</div>
+      </div>
+      <div class="dash-group" style="--dash-accent:#7c3aed;">
+        <div class="dash-group-title">💰 Finanzas</div>
+        <div class="dash-group-grid">${finanzasHtml}</div>
+      </div>
+    </div>
 
     <div class="dash-chart-card">
       <div class="expense-section-title">🌎 Días por país</div>
@@ -3183,15 +3258,14 @@ function renderDashboard() {
       ${buildCountryBarChartSVG(trip.countryDays)}
     </div>
 
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap:20px;">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap:20px;">
       <div class="dash-chart-card">
         <div class="expense-section-title">🗺️ Composición del viaje por región</div>
-        <div class="dash-region-bar">${regionBarHtml}</div>
-        <div class="dash-region-labels">${regionLabelsHtml}</div>
+        <div class="dash-donut-row">${regionDonut}<div class="dash-donut-legend">${regionLegendHtml}</div></div>
       </div>
       <div class="dash-chart-card">
         <div class="expense-section-title">💵 Gasto estipulado por categoría</div>
-        ${catHtml}
+        <div class="dash-donut-row">${catDonut}<div class="dash-donut-legend">${catLegendHtml}</div></div>
       </div>
     </div>
   `;
