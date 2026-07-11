@@ -1010,20 +1010,20 @@ const DEFAULT_BUDGET = {
   perDayUsd: { comida: 25, alojamiento: 15, otros: 5 },
   fuel: { pricePerLiter: 0.95, kmPerLiter: 18 },
   oneOff: [
-    // — Investigado 2026-07-11 para 2 adultos + Samy. Fuentes en PLAN.md/chat. —
-    { name: "Ferry La Paz → Mazatlán: F-150 (hasta 6 m) + 2 pax + cabina pet-friendly + Samy (~14.000 MXN)", amount: 750, cat: "pasajes" },
+    // — Investigado 2026-07-11 para 2 adultos + Samy. Ordenado de mayor a menor gasto. —
     { name: "Shipping Darién RoRo Colón → Cartagena, TODO incluido (flete + THC + BL + agente + fees Colombia)", amount: 2800, cat: "pasajes" },
+    { name: "Ferry La Paz → Mazatlán: F-150 (hasta 6 m) + 2 pax + cabina pet-friendly + Samy (~14.000 MXN)", amount: 750, cat: "pasajes" },
+    { name: "Seguro viajero SafetyWing Essential ×2 personas × ~5,5 meses (USD 62,72/4 sem c/u)", amount: 750, cat: "tramites" },
+    { name: "TIP México — DEPÓSITO reembolsable (se recupera al cancelarlo en Chetumal)", amount: 400, cat: "tramites" },
+    { name: "Fronteras Guatemala → Panamá: TIPs, seguros obligatorios (Nica 12, CR 44, Panamá 25), entradas/salidas ×2 y tasas de Samy", amount: 370, cat: "tramites" },
+    { name: "Seguro auto México ~1 mes (Baja Bound / Sanborns)", amount: 250, cat: "tramites" },
     { name: "Vuelos Panamá → Cartagena ×2 (Wingo/Copa, con equipaje)", amount: 240, cat: "pasajes" },
     { name: "Vuelo Samy PTY→CTG (OJO: Copa NO lleva mascotas en bodega en dic-ene; si pesa +10 kg usar Avianca vía Bogotá)", amount: 200, cat: "pasajes" },
-    { name: "FMM México ×2 (983 MXN c/u)", amount: 110, cat: "tramites" },
-    { name: "TIP México — trámite Banjercito", amount: 75, cat: "tramites" },
-    { name: "TIP México — DEPÓSITO reembolsable (se recupera al cancelarlo en Chetumal)", amount: 400, cat: "tramites" },
-    { name: "Seguro auto México ~1 mes (Baja Bound / Sanborns)", amount: 250, cat: "tramites" },
-    { name: "Belice: procesamiento vehículo + seguro 7 días + permiso perro BAHA (BZ$70) + salida BZ$40 ×2", amount: 105, cat: "tramites" },
-    { name: "Fronteras Guatemala → Panamá: TIPs, seguros obligatorios (Nica 12, CR 44, Panamá 25), entradas/salidas ×2 y tasas de Samy", amount: 370, cat: "tramites" },
+    { name: "Veterinaria Samy: certificados de salud por frontera (~6 consultas en ruta)", amount: 180, cat: "tramites" },
     { name: "Seguros vehículo Sudamérica: SOAT Colombia + Perú + Bolivia + Mercosur (Argentina)", amount: 160, cat: "tramites" },
-    { name: "Seguro viajero SafetyWing Essential ×2 personas × ~5,5 meses (USD 62,72/4 sem c/u)", amount: 750, cat: "tramites" },
-    { name: "Veterinaria Samy: certificados de salud por frontera (~6 consultas en ruta)", amount: 180, cat: "tramites" }
+    { name: "FMM México ×2 (983 MXN c/u)", amount: 110, cat: "tramites" },
+    { name: "Belice: procesamiento vehículo + seguro 7 días + permiso perro BAHA (BZ$70) + salida BZ$40 ×2", amount: 105, cat: "tramites" },
+    { name: "TIP México — trámite Banjercito", amount: 75, cat: "tramites" }
   ],
   contingencyPct: 15
 };
@@ -1082,12 +1082,13 @@ function migrateExpenses(state) {
     state.expensesVersion = 3;
     hasChanges = true;
   }
-  if (state.expensesVersion < 4) {
+  if (state.expensesVersion < 5) {
     // v4 (2026-07-11): costos únicos detallados para 2 adultos + Samy, con precios investigados.
+    // v5 (2026-07-11): misma lista ordenada de mayor a menor gasto.
     // Solo reemplaza la lista oneOff — NO toca los gastos ya registrados ni el resto del presupuesto.
     if (!state.budget) state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
     state.budget.oneOff = JSON.parse(JSON.stringify(DEFAULT_BUDGET.oneOff));
-    state.expensesVersion = 4;
+    state.expensesVersion = 5;
     hasChanges = true;
   }
   return hasChanges;
@@ -2503,20 +2504,20 @@ function computeBudgetEstimate(overrideDays) {
 
 function getCategoryEstimate(cat, days) {
   const perDay = state.budget.perDayUsd;
-  if (cat === 'comida') return perDay.comida * days;
-  if (cat === 'alojamiento') return perDay.alojamiento * days;
-  if (cat === 'otros') return perDay.otros * days;
+  let total = 0;
+  // Estimado diario / combustible de la categoría
+  if (cat === 'comida') total += perDay.comida * days;
+  if (cat === 'alojamiento') total += perDay.alojamiento * days;
+  if (cat === 'otros') total += perDay.otros * days;
   if (cat === 'combustible') {
     const km = computeFuelKm();
     const fuelParam = state.budget.fuel;
-    return km * (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
+    total += km * (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
   }
-  let total = 0;
-  if (cat === 'seguros' || cat === 'pasajes' || cat === 'tramites' || cat === 'otros') {
-    (state.budget.oneOff || []).forEach(o => {
-      if (o.cat === cat) total += o.amount || 0;
-    });
-  }
+  // Costos puntuales únicos: cada uno suma a la categoría que tenga asignada (cualquiera)
+  (state.budget.oneOff || []).forEach(o => {
+    if (o.cat === cat) total += o.amount || 0;
+  });
   return total;
 }
 
