@@ -1189,8 +1189,6 @@ function sortStopsByDate() {
 }
 
 function save(){
-  console.log("save() triggered. Sorting stops and pushing to Firebase...");
-  sortStopsByDate(); // Maintain chronological order
   const docRef = db.collection('mapa_ruta').doc('estado');
   const itemsDiff = diffItemsSinceBase(lastSyncedItems, state.items);
   db.runTransaction(tx => tx.get(docRef).then(doc => {
@@ -3288,4 +3286,8 @@ function checkHashTab() {
     showTab('map');
   }
 }
-window.addEventL
+window.addEventListener('hashchange', checkHashTab);
+checkHashTab(); // Ejecutar inmediatamente al cargar la página
+</script>
+</body>
+</html>
