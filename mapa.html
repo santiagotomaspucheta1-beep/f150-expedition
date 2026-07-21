@@ -3012,6 +3012,68 @@ function computeRegionBreakdown(countryDays) {
   }));
 }
 
+// Mismo cálculo de km que computeFuelKm() (haversine × 1.25 de desvío), pero
+// tramo por tramo en vez de un total único, para poder repartir el km entre
+// regiones. Cada tramo se asigna a la región de la parada de LLEGADA (a qué
+// región nos "movimos" manejando ese tramo), usando el mismo inferStopCountry
+// con cursor de país que ya usa computeCountryDays.
+function computeFuelKmByRegion() {
+  const stops = state.stops || [];
+  const totals = { "EE.UU.": 0, "México": 0, "Centroamérica": 0, "Sudamérica": 0 };
+  let prevCountry = "Estados Unidos";
+  const countries = stops.map(s => {
+    const c = inferStopCountry(s, prevCountry);
+    prevCountry = c;
+    return c;
+  });
+  for (let i = 0; i < stops.length - 1; i++) {
+    const s1 = stops[i], s2 = stops[i + 1];
+    if (s1.lat && s1.lon && s2.lat && s2.lon) {
+      const R = 6371;
+      const dLat = (s2.lat - s1.lat) * Math.PI / 180;
+      const dLon = (s2.lon - s1.lon) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(s1.lat * Math.PI / 180) * Math.cos(s2.lat * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.25;
+      const region = REGION_BY_COUNTRY[countries[i + 1]] || "Sudamérica";
+      totals[region] += km;
+    }
+  }
+  return totals;
+}
+
+// Gasto estipulado por región: reparte los mismos drivers que usa
+// computeBudgetEstimate() (comida+alojamiento+otros por DÍA, combustible por KM)
+// según los días y km de cada región, para poder comparar el ritmo real de gasto
+// contra el presupuesto mientras se viaja. Los costos puntuales (oneOff: ferries,
+// TIPs, seguros, etc.) quedan afuera a propósito -- no dependen de días/km sino
+// de trámites puntuales, así que no se pueden repartir de forma proporcional.
+function computeRegionExpenses(regionBreakdown) {
+  const perDay = state.budget.perDayUsd;
+  const fuelParam = state.budget.fuel;
+  const dailyRate = (perDay.comida || 0) + (perDay.alojamiento || 0) + (perDay.otros || 0);
+  const fuelRate = (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
+  const kmByRegion = computeFuelKmByRegion();
+  const contingencyFactor = 1 + (state.budget.contingencyPct || 15) / 100;
+
+  return regionBreakdown.map(r => {
+    const km = kmByRegion[r.region] || 0;
+    const dailyCost = dailyRate * r.days;
+    const fuelCost = km * fuelRate;
+    const total = (dailyCost + fuelCost) * contingencyFactor;
+    return {
+      region: r.region,
+      days: r.days,
+      km: Math.round(km),
+      dailyCost,
+      fuelCost,
+      total,
+      perDayRate: r.days > 0 ? total / r.days : 0
+    };
+  });
+}
+
 // No hay campo explícito de "día de manejo" en los datos: se estima a partir de
 // las horas totales de ruta (mismo cálculo que usa el sidebar del Mapa) dividido
 // por una cantidad asumida de horas de manejo por día.
@@ -3160,6 +3222,7 @@ function renderDashboard() {
   const fundingPct = computeFundingPct(sales, budget);
   const departure = computeDepartureStatus();
   const regionBreakdown = computeRegionBreakdown(trip.countryDays);
+  const regionExpenses = computeRegionExpenses(regionBreakdown);
 
   const money = n => `$${Math.round(n).toLocaleString('es-AR')}`;
 
@@ -3230,6 +3293,18 @@ function renderDashboard() {
       <span class="amt">${money(c.amount)} <span class="pct">(${c.pct.toFixed(0)}%)</span></span>
     </div>`).join('');
 
+  // — Dona: gasto estipulado por región (comida+alojamiento+otros por día + combustible por km, prorrateados) —
+  const regionExpWithVal = regionExpenses.filter(r => r.total > 0);
+  const regionExpTotal = regionExpenses.reduce((s, r) => s + r.total, 0);
+  const regionExpDonut = buildDonutChartSVG(
+    regionExpWithVal.map(r => ({ value: r.total, color: REGION_COLORS[r.region] })),
+    money(regionExpTotal), 'gasto estipulado'
+  );
+  const regionExpLegendHtml = regionExpWithVal.map(r => `<div class="dash-donut-legend-item">
+      <span class="name"><span class="dot" style="background:${REGION_COLORS[r.region]};"></span>${r.region}</span>
+      <span class="amt">${money(r.total)} <span class="pct">(~${money(r.perDayRate)}/día)</span></span>
+    </div>`).join('');
+
   container.innerHTML = `
     <div class="dash-hero-card">${heroHtml}</div>
 
@@ -3262,6 +3337,11 @@ function renderDashboard() {
       <div class="dash-chart-card">
         <div class="expense-section-title">💵 Gasto estipulado por categoría</div>
         <div class="dash-donut-row">${catDonut}<div class="dash-donut-legend">${catLegendHtml}</div></div>
+      </div>
+      <div class="dash-chart-card">
+        <div class="expense-section-title">🧭 Gasto estipulado por región</div>
+        <div class="dash-donut-row">${regionExpDonut}<div class="dash-donut-legend">${regionExpLegendHtml}</div></div>
+        <div style="font-size:11px; color:#94a3b8; margin-top:10px; line-height:1.4;">Comida + alojamiento + otros por día, y combustible por km, prorrateados por región. No incluye costos puntuales (ferries, TIPs, seguros) — esos no dependen de días/km. Usalo para comparar el ritmo real de gasto contra esto mientras viajan.</div>
       </div>
     </div>
   `;
