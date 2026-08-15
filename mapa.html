@@ -1002,6 +1002,8 @@ const EXPENSE_CATS = {
   comida: { t: "Comida", c: "#16a34a" },
   alojamiento: { t: "Alojamiento / Camping", c: "#2563eb" },
   mantenimiento: { t: "Mantenimiento del auto", c: "#0891b2" },
+  peajes: { t: "Peajes", c: "#a16207" },
+  entretenimiento: { t: "Entretenimiento", c: "#db2777" },
   pasajes: { t: "Pasajes (ferry / Darién)", c: "#7c3aed" },
   tramites: { t: "Trámites / Seguros", c: "#ea580c" },
   otros: { t: "Otros", c: "#4b5563" }
@@ -1038,23 +1040,38 @@ const DEFAULT_BUDGET = {
     // — Investigado 2026-08-15 para 2 adultos + Samy. Ordenado de mayor a menor gasto. —
     { name: "Shipping Darién RoRo Manzanillo (Panamá) → Cartagena, TODO incluido (flete + THC + BL + agente + fees Colombia)", amount: 2800, cat: "pasajes" },
     { name: "Seguro viajero SafetyWing Essential ×2 personas × ~5,5 meses (USD 62,72/4 sem c/u)", amount: 750, cat: "tramites" },
+    { name: "Ferry Santa Rosalía → Guaymas (Mexferry): F-150+camper + 2 pax + Samy — ESTIMADO, confirmar tarifa de vehículo directo con Mexferry", amount: 550, cat: "pasajes" },
+    { name: "Peajes México — cuotas Guaymas→Guadalajara→CDMX→Yucatán, categoría camioneta+camper (ESTIMADO, ver nota)", amount: 400, cat: "peajes" },
     { name: "TIP México — DEPÓSITO reembolsable (se recupera al cancelarlo en Chetumal)", amount: 400, cat: "tramites" },
     { name: "Fronteras Guatemala → Panamá: TIPs, seguros obligatorios (Nica 12, CR 44, Panamá 25), entradas/salidas ×2 y tasas de Samy", amount: 370, cat: "tramites" },
+    { name: "Mantenimiento: cambios de aceite sintético F-150 5.0 V8 (2-3 en ruta, ~7-8 cuartos + filtro)", amount: 300, cat: "mantenimiento" },
+    { name: "Pase America the Beautiful (13 parques NPS de la ruta) — USD 250 si son NO residentes para la NPS, USD 80 si califican como residentes: CONFIRMAR en recreation.gov antes de comprar", amount: 250, cat: "entretenimiento" },
     { name: "Seguro auto México ~1 mes (Baja Bound / Sanborns)", amount: 250, cat: "tramites" },
+    { name: "Mantenimiento: 1 neumático de repuesto si hace falta comprar uno local", amount: 250, cat: "mantenimiento" },
     { name: "Vuelos Panamá → Cartagena ×2 (Wingo/Copa, con equipaje)", amount: 240, cat: "pasajes" },
     { name: "Vuelo Samy PTY→CTG (OJO: Copa NO lleva mascotas en bodega en dic-ene; si pesa +10 kg usar Avianca vía Bogotá)", amount: 200, cat: "pasajes" },
     { name: "Veterinaria Samy: certificados de salud por frontera (~6 consultas en ruta)", amount: 180, cat: "tramites" },
     { name: "Seguros vehículo Sudamérica: SOAT Colombia + Perú + Bolivia + Mercosur (Argentina)", amount: 160, cat: "tramites" },
-    { name: "Mantenimiento: 1 neumático de repuesto si hace falta comprar uno local", amount: 250, cat: "mantenimiento" },
-    { name: "Mantenimiento: cambios de aceite sintético F-150 5.0 V8 (2-3 en ruta, ~7-8 cuartos + filtro)", amount: 300, cat: "mantenimiento" },
-    { name: "Ferry Santa Rosalía → Guaymas (Mexferry): F-150+camper + 2 pax + Samy — ESTIMADO, confirmar tarifa de vehículo directo con Mexferry", amount: 550, cat: "pasajes" },
-    { name: "FMM México ×2 (983 MXN c/u)", amount: 110, cat: "tramites" },
-    { name: "Belice: procesamiento vehículo + seguro 7 días + permiso perro BAHA (BZ$70) + salida BZ$40 ×2", amount: 105, cat: "tramites" },
-    { name: "TIP México — trámite Banjercito", amount: 75, cat: "tramites" },
+    { name: "Termas de La Fortuna/Arenal, Costa Rica ×2 (si eligen una paga tipo Tabacón; las del río son gratis)", amount: 150, cat: "entretenimiento" },
     { name: "Mantenimiento: rotación y alineación de neumáticos (2-3 veces en ruta)", amount: 150, cat: "mantenimiento" },
     { name: "Mantenimiento: fondo para pinchazos/reparaciones de neumático imprevistas", amount: 150, cat: "mantenimiento" },
     { name: "Mantenimiento: pastillas de freno delanteras (el peso del camper las gasta más rápido)", amount: 150, cat: "mantenimiento" },
-    { name: "Mantenimiento: filtros de aire/combustible/cabina + revisión general", amount: 100, cat: "mantenimiento" }
+    { name: "Trekking nocturno Volcán Acatenango, Guatemala ×2 (OPCIONAL, mencionado en la parada de Antigua)", amount: 120, cat: "entretenimiento" },
+    { name: "Tikal, Guatemala: entrada + permiso de amanecer ×2 (ya elegido 'Tikal al amanecer' en la parada)", amount: 118, cat: "entretenimiento" },
+    { name: "Peajes Colombia — Cartagena→Medellín→Salento→Ipiales", amount: 110, cat: "peajes" },
+    { name: "FMM México ×2 (983 MXN c/u)", amount: 110, cat: "tramites" },
+    { name: "Belice: procesamiento vehículo + seguro 7 días + permiso perro BAHA (BZ$70) + salida BZ$40 ×2", amount: 105, cat: "tramites" },
+    { name: "Mantenimiento: filtros de aire/combustible/cabina + revisión general", amount: 100, cat: "mantenimiento" },
+    { name: "Tour guiado Salar de Uyuni, Bolivia (1 día, recomendado aunque tengan 4x4 propio por seguridad en la sal)", amount: 70, cat: "entretenimiento" },
+    { name: "TIP México — trámite Banjercito", amount: 75, cat: "tramites" },
+    { name: "Cenotes + ruinas de Tulum, Riviera Maya ×2", amount: 60, cat: "entretenimiento" },
+    { name: "Volcano boarding Cerro Negro, León, Nicaragua ×2", amount: 60, cat: "entretenimiento" },
+    { name: "Canal de Panamá, esclusas de Miraflores ×2", amount: 50, cat: "entretenimiento" },
+    { name: "Peajes Ecuador + Perú + Bolivia + Argentina — Panamericana, varios tramos", amount: 40, cat: "peajes" },
+    { name: "Peajes Centroamérica — Costa Rica (Ruta 27 si aplica) + Panamá (Autopista Colón + corredores)", amount: 35, cat: "peajes" },
+    { name: "Custer State Park, SD: entrada (parque ESTATAL, NO cubierto por el pase federal America the Beautiful)", amount: 20, cat: "entretenimiento" },
+    { name: "Peajes EE.UU. — mínimos en toda la ruta (Golden Gate Bridge ida y vuelta si lo cruzan en SF, resto libre)", amount: 15, cat: "peajes" },
+    { name: "El Peñón de Guatapé, Colombia: entrada a subir la roca ×2", amount: 12, cat: "entretenimiento" }
   ],
   contingencyPct: 20
 };
@@ -1147,6 +1164,20 @@ function migrateExpenses(state) {
       DEFAULT_BUDGET.oneOff.filter(o => o.cat === 'mantenimiento').forEach(o => state.budget.oneOff.push(JSON.parse(JSON.stringify(o))));
     }
     state.expensesVersion = 6;
+    hasChanges = true;
+  }
+  if (state.expensesVersion < 7) {
+    // v7 (2026-08-15): agrega Peajes (monto total investigado por tramo, no por día) y
+    // Entretenimiento (ítems específicos de la ruta real -- pase de parques de EEUU,
+    // Tikal, Cerro Negro, Uyuni, etc. -- en vez de un $/día genérico).
+    if (!state.budget) state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
+    if (!(state.budget.oneOff || []).some(o => o.cat === 'peajes')) {
+      DEFAULT_BUDGET.oneOff.filter(o => o.cat === 'peajes').forEach(o => state.budget.oneOff.push(JSON.parse(JSON.stringify(o))));
+    }
+    if (!(state.budget.oneOff || []).some(o => o.cat === 'entretenimiento')) {
+      DEFAULT_BUDGET.oneOff.filter(o => o.cat === 'entretenimiento').forEach(o => state.budget.oneOff.push(JSON.parse(JSON.stringify(o))));
+    }
+    state.expensesVersion = 7;
     hasChanges = true;
   }
   return hasChanges;
