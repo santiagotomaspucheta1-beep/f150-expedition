@@ -1001,18 +1001,42 @@ const EXPENSE_CATS = {
   combustible: { t: "Nafta / Combustible", c: "#dc2626" },
   comida: { t: "Comida", c: "#16a34a" },
   alojamiento: { t: "Alojamiento / Camping", c: "#2563eb" },
+  mantenimiento: { t: "Mantenimiento del auto", c: "#0891b2" },
   pasajes: { t: "Pasajes (ferry / Darién)", c: "#7c3aed" },
   tramites: { t: "Trámites / Seguros", c: "#ea580c" },
   otros: { t: "Otros", c: "#4b5563" }
 };
 
 const DEFAULT_BUDGET = {
-  perDayUsd: { comida: 25, alojamiento: 15, otros: 5 },
-  fuel: { pricePerLiter: 0.95, kmPerLiter: 18 },
+  // Investigado 2026-08-15. Comida, alojamiento y precio de nafta varían por región
+  // porque el costo de vida y el precio del combustible cambian mucho a lo largo de la
+  // ruta (ver fuentes en las notas de Trámites/Gastos). "Otros" queda fijo a pedido.
+  perDayUsd: {
+    // USD por día para LOS DOS (no por persona). EE.UU. es la región más cara para
+    // comer y dormir incluso acampando; México y Sudamérica (Colombia/Ecuador/Perú/
+    // Bolivia) son las más baratas; Centroamérica queda en el medio, empujada para
+    // arriba por Costa Rica y Belice.
+    comida: { "EE.UU.": 35, "México": 22, "Centroamérica": 26, "Sudamérica": 22 },
+    alojamiento: { "EE.UU.": 18, "México": 12, "Centroamérica": 15, "Sudamérica": 13 },
+    otros: 5
+  },
+  fuel: {
+    // Consumo real de la F-150 2019 5.0L V8 con camper cargado: ~13 MPG combinado
+    // (bastante peor que el EPA nominal sin carga). Se guarda como litros/100km porque
+    // así lo usa el resto de la app -- el campo se sigue llamando kmPerLiter por legado
+    // pero la fórmula de costo lo trata como L/100km. El input de la UI ahora es en MPG.
+    kmPerLiter: 18,
+    // Precio de nafta por litro en USD, uno por región (fuente: globalpetrolprices /
+    // dailyfuels / tradingeconomics, agosto 2026). Centroamérica y Sudamérica son
+    // promedios simples de los países del tramo: Centroamérica = Belice 1.92 + Guatemala
+    // 1.33 + El Salvador 1.18 + Honduras 1.20 + Nicaragua 1.33 + Costa Rica 1.61 + Panamá
+    // 1.26 (≈1.40); Sudamérica = Colombia 1.15 + Ecuador 0.86 + Perú 1.41 + Bolivia 1.00 +
+    // Argentina 1.45 (≈1.17). Todas más caras que el viejo default plano de USD 0.95/L.
+    pricePerLiter: { "EE.UU.": 1.15, "México": 1.36, "Centroamérica": 1.40, "Sudamérica": 1.17 }
+  },
   oneOff: [
-    // — Investigado 2026-07-11 para 2 adultos + Samy. Ordenado de mayor a menor gasto. —
-    { name: "Shipping Darién RoRo Colón → Cartagena, TODO incluido (flete + THC + BL + agente + fees Colombia)", amount: 2800, cat: "pasajes" },
-    { name: "Ferry La Paz → Mazatlán: F-150 (hasta 6 m) + 2 pax + cabina pet-friendly + Samy (~14.000 MXN)", amount: 750, cat: "pasajes" },
+    // — Investigado 2026-08-15 para 2 adultos + Samy. Ordenado de mayor a menor gasto. —
+    { name: "Shipping Darién RoRo Manzanillo (Panamá) → Cartagena, TODO incluido (flete + THC + BL + agente + fees Colombia)", amount: 2800, cat: "pasajes" },
     { name: "Seguro viajero SafetyWing Essential ×2 personas × ~5,5 meses (USD 62,72/4 sem c/u)", amount: 750, cat: "tramites" },
     { name: "TIP México — DEPÓSITO reembolsable (se recupera al cancelarlo en Chetumal)", amount: 400, cat: "tramites" },
     { name: "Fronteras Guatemala → Panamá: TIPs, seguros obligatorios (Nica 12, CR 44, Panamá 25), entradas/salidas ×2 y tasas de Samy", amount: 370, cat: "tramites" },
@@ -1021,11 +1045,18 @@ const DEFAULT_BUDGET = {
     { name: "Vuelo Samy PTY→CTG (OJO: Copa NO lleva mascotas en bodega en dic-ene; si pesa +10 kg usar Avianca vía Bogotá)", amount: 200, cat: "pasajes" },
     { name: "Veterinaria Samy: certificados de salud por frontera (~6 consultas en ruta)", amount: 180, cat: "tramites" },
     { name: "Seguros vehículo Sudamérica: SOAT Colombia + Perú + Bolivia + Mercosur (Argentina)", amount: 160, cat: "tramites" },
+    { name: "Mantenimiento: 1 neumático de repuesto si hace falta comprar uno local", amount: 250, cat: "mantenimiento" },
+    { name: "Mantenimiento: cambios de aceite sintético F-150 5.0 V8 (2-3 en ruta, ~7-8 cuartos + filtro)", amount: 300, cat: "mantenimiento" },
+    { name: "Ferry Santa Rosalía → Guaymas (Mexferry): F-150+camper + 2 pax + Samy — ESTIMADO, confirmar tarifa de vehículo directo con Mexferry", amount: 550, cat: "pasajes" },
     { name: "FMM México ×2 (983 MXN c/u)", amount: 110, cat: "tramites" },
     { name: "Belice: procesamiento vehículo + seguro 7 días + permiso perro BAHA (BZ$70) + salida BZ$40 ×2", amount: 105, cat: "tramites" },
-    { name: "TIP México — trámite Banjercito", amount: 75, cat: "tramites" }
+    { name: "TIP México — trámite Banjercito", amount: 75, cat: "tramites" },
+    { name: "Mantenimiento: rotación y alineación de neumáticos (2-3 veces en ruta)", amount: 150, cat: "mantenimiento" },
+    { name: "Mantenimiento: fondo para pinchazos/reparaciones de neumático imprevistas", amount: 150, cat: "mantenimiento" },
+    { name: "Mantenimiento: pastillas de freno delanteras (el peso del camper las gasta más rápido)", amount: 150, cat: "mantenimiento" },
+    { name: "Mantenimiento: filtros de aire/combustible/cabina + revisión general", amount: 100, cat: "mantenimiento" }
   ],
-  contingencyPct: 15
+  contingencyPct: 20
 };
 
 const DEFAULT_SALES = [
@@ -1089,6 +1120,33 @@ function migrateExpenses(state) {
     if (!state.budget) state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
     state.budget.oneOff = JSON.parse(JSON.stringify(DEFAULT_BUDGET.oneOff));
     state.expensesVersion = 5;
+    hasChanges = true;
+  }
+  if (state.expensesVersion < 6) {
+    // v6 (2026-08-15): comida/alojamiento/nafta pasan de un valor plano para toda la ruta
+    // a un valor por región (EE.UU./México/Centroamérica/Sudamérica), con precios
+    // investigados de nuevo. Si el presupuesto todavía tiene la forma vieja (un número
+    // en vez de un objeto por región), lo migra usando ese mismo número como punto de
+    // partida para las 4 regiones -- así no se pierde un ajuste manual que haya hecho el
+    // usuario, aunque después conviene revisar los valores por región. También sube la
+    // contingencia default de 15% a 20% y agrega la categoría de mantenimiento del auto.
+    if (!state.budget) state.budget = JSON.parse(JSON.stringify(DEFAULT_BUDGET));
+    const b = state.budget;
+    if (typeof b.perDayUsd.comida === 'number') {
+      const flatComida = b.perDayUsd.comida, flatAloj = b.perDayUsd.alojamiento;
+      b.perDayUsd.comida = {}; b.perDayUsd.alojamiento = {};
+      REGION_ORDER.forEach(r => { b.perDayUsd.comida[r] = flatComida; b.perDayUsd.alojamiento[r] = flatAloj; });
+    }
+    if (typeof b.fuel.pricePerLiter === 'number') {
+      const flatPrice = b.fuel.pricePerLiter;
+      b.fuel.pricePerLiter = {};
+      REGION_ORDER.forEach(r => { b.fuel.pricePerLiter[r] = flatPrice; });
+    }
+    if (b.contingencyPct === 15) b.contingencyPct = 20;
+    if (!(state.budget.oneOff || []).some(o => o.cat === 'mantenimiento')) {
+      DEFAULT_BUDGET.oneOff.filter(o => o.cat === 'mantenimiento').forEach(o => state.budget.oneOff.push(JSON.parse(JSON.stringify(o))));
+    }
+    state.expensesVersion = 6;
     hasChanges = true;
   }
   return hasChanges;
@@ -1611,6 +1669,14 @@ function renderList(){
   const el = document.getElementById("stop-list");
   el.innerHTML = "";
   let totalKm = 0, totalHours = 0;
+  // País de cada parada (mismo criterio cursor que usa el resto del tablero) para
+  // saber, tramo por tramo, si el destino está en EE.UU. y así sumar millas además de km.
+  let prevCountryForList = "Estados Unidos";
+  const listCountries = state.stops.map(s => {
+    const c = inferStopCountry(s, prevCountryForList);
+    prevCountryForList = c;
+    return c;
+  });
   state.stops.forEach((s,i)=>{
     const row = document.createElement("div");
     row.className = "stop-row";
@@ -1627,7 +1693,9 @@ function renderList(){
       totalKm += leg.km; totalHours += leg.hours;
       const legEl = document.createElement("div");
       legEl.className = "leg-info";
-      legEl.innerHTML = "🚗 <b>" + Math.round(leg.km) + " km</b> · ~" + formatDuration(leg.hours) + " de manejo";
+      const isUsLeg = listCountries[i + 1] === "Estados Unidos";
+      const miText = isUsLeg ? " (" + Math.round(leg.km * 0.621371).toLocaleString('es-AR') + " mi)" : "";
+      legEl.innerHTML = "🚗 <b>" + Math.round(leg.km).toLocaleString('es-AR') + " km" + miText + "</b> · ~" + formatDuration(leg.hours) + " de manejo";
       el.appendChild(legEl);
     }
   });
@@ -2468,17 +2536,40 @@ function computeFuelKm() {
   return Math.round(totalKm * 1.25); // Include deviation/local detour factor
 }
 
+// Reparto real de días por región (como fracción del total), para poder escalar
+// proporcionalmente el escenario del slider "días totales" a cada región sin perder
+// las tarifas región-por-región de comida/alojamiento/nafta.
+function getRegionDayShares() {
+  const trip = computeTripStats();
+  const rb = computeRegionBreakdown(trip.countryDays);
+  const total = rb.reduce((s, r) => s + r.days, 0) || 1;
+  const shares = {};
+  rb.forEach(r => { shares[r.region] = r.days / total; });
+  return shares;
+}
+
 function computeBudgetEstimate(overrideDays) {
   const stops = state.stops || [];
   const realDays = stops.length > 0 ? daysBetween(stops[0].start, stops[stops.length-1].end) : 0;
   const days = overrideDays !== null ? overrideDays : realDays;
 
   const perDay = state.budget.perDayUsd;
-  const dailyTotal = (perDay.comida + perDay.alojamiento + perDay.otros) * days;
+  const shares = getRegionDayShares();
+  let dailyTotal = (perDay.otros || 0) * days;
+  REGION_ORDER.forEach(region => {
+    const regionDays = days * (shares[region] || 0);
+    dailyTotal += (perDay.comida[region] || 0) * regionDays;
+    dailyTotal += (perDay.alojamiento[region] || 0) * regionDays;
+  });
 
   const km = computeFuelKm();
+  const kmByRegion = computeFuelKmByRegion();
   const fuelParam = state.budget.fuel;
-  const fuelTotal = km * (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
+  const fuelRate = (fuelParam.kmPerLiter || 18) / 100;
+  let fuelTotal = 0;
+  REGION_ORDER.forEach(region => {
+    fuelTotal += (kmByRegion[region] || 0) * (fuelParam.pricePerLiter[region] || 0) * fuelRate;
+  });
 
   let oneOffTotal = 0;
   (state.budget.oneOff || []).forEach(o => {
@@ -2486,7 +2577,7 @@ function computeBudgetEstimate(overrideDays) {
   });
 
   const subtotal = dailyTotal + fuelTotal + oneOffTotal;
-  const contingency = subtotal * ((state.budget.contingencyPct || 15) / 100);
+  const contingency = subtotal * ((state.budget.contingencyPct || 20) / 100);
 
   return {
     days,
@@ -2502,15 +2593,22 @@ function computeBudgetEstimate(overrideDays) {
 
 function getCategoryEstimate(cat, days) {
   const perDay = state.budget.perDayUsd;
+  const shares = getRegionDayShares();
   let total = 0;
-  // Estimado diario / combustible de la categoría
-  if (cat === 'comida') total += perDay.comida * days;
-  if (cat === 'alojamiento') total += perDay.alojamiento * days;
-  if (cat === 'otros') total += perDay.otros * days;
+  if (cat === 'comida' || cat === 'alojamiento') {
+    REGION_ORDER.forEach(region => {
+      const regionDays = days * (shares[region] || 0);
+      total += (perDay[cat][region] || 0) * regionDays;
+    });
+  }
+  if (cat === 'otros') total += (perDay.otros || 0) * days;
   if (cat === 'combustible') {
-    const km = computeFuelKm();
+    const kmByRegion = computeFuelKmByRegion();
     const fuelParam = state.budget.fuel;
-    total += km * (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
+    const fuelRate = (fuelParam.kmPerLiter || 18) / 100;
+    REGION_ORDER.forEach(region => {
+      total += (kmByRegion[region] || 0) * (fuelParam.pricePerLiter[region] || 0) * fuelRate;
+    });
   }
   // Costos puntuales únicos: cada uno suma a la categoría que tenga asignada (cualquiera)
   (state.budget.oneOff || []).forEach(o => {
@@ -2594,37 +2692,47 @@ function renderExpenses() {
   if (configInputs) {
     configInputs.innerHTML = `
       <div style="font-weight:800; font-size:13px; color:#1e293b; margin-bottom:12px; border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Parámetros del Presupuesto</div>
-      
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
         <div>
-          <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Consumo Nafta (L/100km)</label>
-          <input type="number" step="0.1" value="${state.budget.fuel.kmPerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'kmPerLiter', this.value)">
+          <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Consumo (MPG, como el tablero)</label>
+          <input type="number" step="0.1" value="${(235.215 / (state.budget.fuel.kmPerLiter || 18)).toFixed(1)}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateFuelMpg(this.value)">
         </div>
         <div>
-          <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Precio Litro Nafta (USD)</label>
-          <input type="number" step="0.01" value="${state.budget.fuel.pricePerLiter}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('fuel', 'pricePerLiter', this.value)">
+          <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Margen Contingencia (%)</label>
+          <input type="number" value="${state.budget.contingencyPct}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('contingencyPct', '', null, this.value)">
         </div>
       </div>
 
-      <div style="font-weight:700; font-size:11px; color:#475569; margin-bottom:6px;">Gastos diarios estimados (USD):</div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
-        <div>
-          <label style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px; margin-bottom:2px;">🍔 Comida</label>
-          <input type="number" value="${state.budget.perDayUsd.comida}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'comida', this.value)">
-        </div>
-        <div>
-          <label style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px; margin-bottom:2px;">🏕️ Alojamiento</label>
-          <input type="number" value="${state.budget.perDayUsd.alojamiento}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'alojamiento', this.value)">
-        </div>
-        <div>
-          <label style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px; margin-bottom:2px;">📦 Otros</label>
-          <input type="number" value="${state.budget.perDayUsd.otros}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'otros', this.value)">
-        </div>
+      <div style="font-weight:700; font-size:11px; color:#475569; margin-bottom:6px;">Nafta, comida y alojamiento por región (USD):</div>
+      <div style="overflow-x:auto; margin-bottom:12px;">
+        <table style="width:100%; border-collapse:collapse; font-size:11px;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:3px 4px; color:#94a3b8; font-weight:600;"></th>
+              ${REGION_ORDER.map(r => `<th style="text-align:center; padding:3px 4px; color:${REGION_COLORS[r]}; font-weight:800;">${r}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:3px 4px; color:#64748b; white-space:nowrap;">⛽ Nafta $/L</td>
+              ${REGION_ORDER.map(r => `<td style="padding:2px 3px;"><input type="number" step="0.01" value="${state.budget.fuel.pricePerLiter[r]}" style="width:100%; min-width:52px; padding:5px 4px; border:1px solid #cbd5e1; border-radius:5px; text-align:center;" onchange="updateBudgetSetting('fuel', 'pricePerLiter', '${r}', this.value)"></td>`).join('')}
+            </tr>
+            <tr>
+              <td style="padding:3px 4px; color:#64748b; white-space:nowrap;">🍔 Comida/día</td>
+              ${REGION_ORDER.map(r => `<td style="padding:2px 3px;"><input type="number" value="${state.budget.perDayUsd.comida[r]}" style="width:100%; min-width:52px; padding:5px 4px; border:1px solid #cbd5e1; border-radius:5px; text-align:center;" onchange="updateBudgetSetting('perDayUsd', 'comida', '${r}', this.value)"></td>`).join('')}
+            </tr>
+            <tr>
+              <td style="padding:3px 4px; color:#64748b; white-space:nowrap;">🏕️ Aloj./día</td>
+              ${REGION_ORDER.map(r => `<td style="padding:2px 3px;"><input type="number" value="${state.budget.perDayUsd.alojamiento[r]}" style="width:100%; min-width:52px; padding:5px 4px; border:1px solid #cbd5e1; border-radius:5px; text-align:center;" onchange="updateBudgetSetting('perDayUsd', 'alojamiento', '${r}', this.value)"></td>`).join('')}
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div>
-        <label style="font-size:11px; font-weight:700; color:#475569; display:block; margin-bottom:4px;">Margen Contingencia (%)</label>
-        <input type="number" value="${state.budget.contingencyPct}" style="width:100%; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('contingencyPct', '', this.value)">
+        <label style="font-size:10px; color:#64748b; display:flex; align-items:center; gap:2px; margin-bottom:2px;">📦 Otros (USD/día, fijo en toda la ruta)</label>
+        <input type="number" value="${state.budget.perDayUsd.otros}" style="width:120px; padding:6px; border:1px solid #cbd5e1; border-radius:6px;" onchange="updateBudgetSetting('perDayUsd', 'otros', null, this.value)">
       </div>
     `;
   }
@@ -2707,14 +2815,27 @@ function resetScenarioDays() {
   updateExpensesUI(realDays);
 }
 
-function updateBudgetSetting(section, key, val) {
+function updateBudgetSetting(section, key, region, val) {
   if (section === 'perDayUsd') {
-    state.budget.perDayUsd[key] = parseFloat(val) || 0;
+    if (region) state.budget.perDayUsd[key][region] = parseFloat(val) || 0;
+    else state.budget.perDayUsd[key] = parseFloat(val) || 0; // 'otros', queda plano en toda la ruta
   } else if (section === 'fuel') {
-    state.budget.fuel[key] = parseFloat(val) || 0;
+    if (region) state.budget.fuel.pricePerLiter[region] = parseFloat(val) || 0;
+    else state.budget.fuel[key] = parseFloat(val) || 0; // kmPerLiter (consumo del vehículo, no varía por región)
   } else if (section === 'contingencyPct') {
     state.budget.contingencyPct = parseFloat(val) || 0;
   }
+  save();
+  const activeDays = tempScenarioDays !== null ? tempScenarioDays : ((state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0);
+  updateExpensesUI(activeDays);
+}
+
+// Consumo ingresado en MPG (como marca el tablero de la F-150) y convertido a
+// L/100km para el resto de la app: L/100km = 235.215 / MPG.
+function updateFuelMpg(mpgVal) {
+  const mpg = parseFloat(mpgVal);
+  if (!mpg || mpg <= 0) return;
+  state.budget.fuel.kmPerLiter = 235.215 / mpg;
   save();
   const activeDays = tempScenarioDays !== null ? tempScenarioDays : ((state.stops && state.stops.length > 0) ? daysBetween(state.stops[0].start, state.stops[state.stops.length-1].end) : 0);
   updateExpensesUI(activeDays);
@@ -3052,15 +3173,17 @@ function computeFuelKmByRegion() {
 function computeRegionExpenses(regionBreakdown) {
   const perDay = state.budget.perDayUsd;
   const fuelParam = state.budget.fuel;
-  const dailyRate = (perDay.comida || 0) + (perDay.alojamiento || 0) + (perDay.otros || 0);
-  const fuelRate = (fuelParam.pricePerLiter || 0.95) * ((fuelParam.kmPerLiter || 18) / 100);
+  const fuelConsumeRate = (fuelParam.kmPerLiter || 18) / 100;
   const kmByRegion = computeFuelKmByRegion();
-  const contingencyFactor = 1 + (state.budget.contingencyPct || 15) / 100;
+  const contingencyFactor = 1 + (state.budget.contingencyPct || 20) / 100;
 
   return regionBreakdown.map(r => {
     const km = kmByRegion[r.region] || 0;
+    // Tarifas propias de la región (comida/alojamiento/nafta), "otros" sigue plano.
+    const dailyRate = (perDay.comida[r.region] || 0) + (perDay.alojamiento[r.region] || 0) + (perDay.otros || 0);
+    const fuelPrice = fuelParam.pricePerLiter[r.region] || 0;
     const dailyCost = dailyRate * r.days;
-    const fuelCost = km * fuelRate;
+    const fuelCost = km * fuelPrice * fuelConsumeRate;
     const total = (dailyCost + fuelCost) * contingencyFactor;
     return {
       region: r.region,
