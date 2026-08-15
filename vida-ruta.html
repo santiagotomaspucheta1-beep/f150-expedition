@@ -312,6 +312,50 @@ const TAREAS_SEED=[
  {id:"t_samy_garrapatas",e:"🔍",n:"Revisar garrapatas y patas",cat:"samy",tipo:"libre",cada:2,pts:1}
 ];
 
+/* ---- CHECKLIST SEMANAL DE LA F-150 --------------------------------------
+   Base: el brief que armó Martín para el Coyote 5.0 Gen 3 + Veepeak BLE+.
+   Los ítems marcados con `v:true` son los que NO hay que dar por buenos: son
+   datos que cambian según la camioneta concreta y que conviene leer del propio
+   vehículo antes de salir. Están explicados en la nota de cada uno.          */
+const CHK_SECS=[
+ {n:"1", t:"Diagnóstico OBD2", s:"Veepeak BLE+ · Car Scanner o FORScan Lite", items:[
+  {id:"c11",t:"Escaneo de códigos DTC",d:"PCM (motor) y TCM (caja). Anotá los pendientes ANTES de borrar nada: un código borrado sin leer es información perdida."},
+  {id:"c12",t:"Parámetros en vivo verificados",d:"TFT, ECT, OAR y presión de riel con el motor en marcha. Ver la tabla de rangos abajo."},
+  {id:"c13",t:"Módulos de carrocería y 4x4",d:"El Veepeak BLE+ NO soporta MS-CAN, que es donde Ford cuelga varios módulos de carrocería. Si el TCCM del 4x4 no aparece, no es que esté roto: es el adaptador.",v:true}
+ ]},
+ {n:"2", t:"Bajo el capó", s:"Motor frío y en plano", items:[
+  {id:"c21",t:"Nivel de aceite de motor",d:"Esperar 15-20 min tras apagar. VERIFICAR EN TU CAMIONETA: las fuentes online se contradicen entre 7,7 qt / 5W-20 y 8,8 qt / 5W-30 para el 5.0 Gen 3. La viscosidad correcta está estampada en la tapa de llenado de aceite y en el manual. Anotala en el celular: se la vas a tener que dictar a un mecánico en México.",v:true},
+  {id:"c22",t:"Válvula PCV y mangueras de ventilación",d:"Que la bolilla interna suene libre al sacudirla."},
+  {id:"c23",t:"Nivel de refrigerante",d:"En frío, en la marca de llenado. Buscar costras de fuga debajo de la bomba de agua."},
+  {id:"c24",t:"Doble correa de accesorios",d:"La serpentina principal y la correa elástica del compresor de A/C, que en el Coyote va aparte."},
+  {id:"c25",t:"Filtro de aire",d:"Sacudir el polvo después de cada tramo de ripio o calamina. Filtro K&N: limpieza cada ~15.000 km."},
+  {id:"c26",t:"Batería y sensor BMS",d:"Bornes firmes y sin sulfato. Que ningún accesorio del camper esté conectado ANTES del sensor de masa, o el sistema calcula mal la carga."}
+ ]},
+ {n:"3", t:"Tren rodante y chasis", s:"Lo que se rompe en ripio", items:[
+  {id:"c31",t:"Mangueras de vacío IWE (cubos delanteros)",d:"Punto débil conocido de la F-150. Que no estén rozando ni descalzadas."},
+  {id:"c32",t:"Test de 4x4 y bloqueo de diferencial",d:"Enganchar 4H en tierra. El bloqueo electrónico es OPCIONAL en la XLT: confirmá si tu camioneta lo tiene antes de buscar un testigo que quizá no exista.",v:true},
+  {id:"c33",t:"Presión de los 4 neumáticos + auxilio",d:"El valor manda la placa del marco de la puerta, NO un número de internet. Y con el camper cargado el eje trasero pide más presión que la placa de fábrica. El auxilio tiene su propia especificación: miralo en su etiqueta.",v:true},
+  {id:"c34",t:"Malacate y cable del auxilio",d:"AGREGADO. El mecanismo que baja la rueda de auxilio bajo el chasis se agarrota con barro y sal. Bajala y subila cada tanto: descubrir que no baja con una goma pinchada en Bolivia es el peor momento posible."},
+  {id:"c35",t:"Freno de estacionamiento eléctrico (botón)",d:"Confirmado: es de botón. Accionalo y liberalo desde la cabina y escuchá que los servomotores traseros actúen sin chillidos. Ojo con esto en el embarque del Darién: el auto viaja en el barco y conviene dejarlo en P sin EPB puesto para que no quede trabado si se descarga la batería."},
+  {id:"c36",t:"Espesor de pastillas de freno",d:"AGREGADO. El peso del camper las gasta bastante más rápido que el uso normal, y en los Andes se van en bajadas largas."},
+  {id:"c37",t:"Inspección de bajos y cardán",d:"Piedras o ramas encajadas, fuelles de semiejes intactos."},
+  {id:"c38",t:"Manchas en el piso",d:"AGREGADO. Antes de arrancar, mirar dónde durmió la camioneta. Una mancha nueva es el aviso más barato que vas a tener."},
+  {id:"c39",t:"Nivel de limpiaparabrisas",d:"Al tope. En ruta de tierra con camiones adelante se vacía en un día."}
+ ]}
+];
+const CHK_PIDS=[
+ ["OAR","Octane Adjust Ratio","−1,0 óptimo","Entre 0 y +1: nafta de bajo octanaje. El motor atrasa el encendido para protegerse."],
+ ["Knock Retard","Detonación","0° a −2° en aceleración","Menos de −4°: detonación severa. Nafta mala o exceso de carga en subida."],
+ ["TFT","Temperatura de la caja 10R80","90 a 102 °C","Más de 108 °C: parar en neutral y ralentí hasta que baje."],
+ ["ECT","Temperatura de refrigerante","88 a 100 °C","Más de 106 °C: radiador tapado de insectos o barro, o falta refrigerante."],
+ ["FRP","Presión del riel","200 a 2.500+ PSI","Menos de 500 PSI con carga: falla de la bomba de alta."],
+ ["Misfire","Fallos por cilindro 1-8","0 en todos","Cualquier valor persistente: bujía gastada o bobina con falla."]
+];
+const CHK_TIPS=[
+ {t:"Altura en los Andes (3.000 a 4.500 msnm)",d:"El Coyote es atmosférico y pierde alrededor del 10% de potencia cada 1.000 m. Usá el +/− de la palanca para mantenerlo entre 2.500 y 3.500 RPM en subidas largas y que no pierda inercia.",k:"w"},
+ {t:"Bajadas largas",d:"Modo Tow/Haul y fijar una marcha baja para frenar con el motor. Las pastillas recalentadas dejan de frenar justo cuando más las necesitás, y con el camper atrás pesa el doble.",k:"i"}
+];
+
 const SAMY_SEED=["Antirrábica vigente con certificado","Microchip ISO 11784/11785",
  "Certificado Veterinario Internacional (APHIS/USDA)","Antiparasitario interno y externo al día",
  "Libreta sanitaria completa y traducida","Arnés o caja de seguridad para la F-150",
@@ -412,7 +456,7 @@ function inferCountry(stop,prev){
    -------------------------------------------------------------------------- */
 let PLAN={stops:[],items:[],budget:null,loaded:false};
 const REAL_EMPTY={days:{},exp:{},fuel:{},inc:{},ideas:{},tram:{},gates:{},oneoff:{},fx:{},
- habitos:{},tareas:{},hlog:{},tlog:{},samy:{},ideasC:{},mant:{},inc2:{},songs:{},
+ habitos:{},tareas:{},hlog:{},tlog:{},samy:{},ideasC:{},mant:{},inc2:{},songs:{},chk:{},
  cfg:{odo0:null,ua:0}};
 // Quién está usando ESTE teléfono. No se sincroniza a propósito: el celular de
 // Martín es Martín y el de Lula es Lula.
@@ -423,7 +467,7 @@ let VIEW="tablero",MAP=null,SYNC="off",FB_DB=null;
 function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('LS lleno',e);}}
 function saveReal(push=true){REAL.cfg.ua=now();lsSet(LS_REAL,REAL);if(push)pushReal();}
-const KEYS=["days","exp","fuel","inc","ideas","tram","gates","oneoff","fx","habitos","tareas","hlog","tlog","samy","ideasC","mant","inc2","songs"];
+const KEYS=["days","exp","fuel","inc","ideas","tram","gates","oneoff","fx","habitos","tareas","hlog","tlog","samy","ideasC","mant","inc2","songs","chk"];
 function mergeReal(local,remote){
  if(!remote)return local;
  const out=JSON.parse(JSON.stringify(local));
@@ -1383,12 +1427,60 @@ function saveIdeaC(){const t=$('#cT').value.trim();if(!t)return;const id=uid();
    CAMIONETA
    -------------------------------------------------------------------------- */
 let camTab='estado';
+/* Checklist semanal: el estado se guarda por semana (clave = lunes de esa
+   semana) para que quede historial y no se pise al reiniciar cada lunes. */
+function chkWeek(){return iso(lunesDe(D(today())));}
+function chkGet(){return new Set(((REAL.chk[chkWeek()]||{}).ids)||[]);}
+function chkTog(id){
+ const s=chkGet();s.has(id)?s.delete(id):s.add(id);
+ REAL.chk[chkWeek()]={w:chkWeek(),ids:[...s],ua:now()};
+ saveReal();renderCamioneta();}
+function chkTotal(){return CHK_SECS.reduce((a,x)=>a+x.items.length,0);}
 function renderCamioneta(){
  const c=calc(),odo=c.odoNow||c.odo0||0;
  const hist=Object.values(REAL.mant).filter(m=>!m.del).sort((a,b)=>b.date.localeCompare(a.date));
  const inc=Object.values(REAL.inc2).filter(i=>!i.del).sort((a,b)=>b.date.localeCompare(a.date));
- let h=`<div class="seg" style="margin-bottom:14px">${[['estado','Estado y services'],['motor','Croquis del motor'],['electrico','Panel eléctrico']]
+ let h=`<div class="seg" style="margin-bottom:14px">${[['estado','Estado'],['checklist','Checklist semanal'],['motor','Croquis'],['electrico','Eléctrico']]
   .map(([k,l])=>`<button class="${camTab===k?'on':''}" onclick="camTab='${k}';renderCamioneta()">${l}</button>`).join('')}</div>`;
+
+ if(camTab==='checklist'){
+  const done=chkGet(),tot=chkTotal(),pct=Math.round(done.size/tot*100);
+  const semanas=Object.values(REAL.chk).filter(w=>w&&(w.ids||[]).length>=tot).length;
+  const g=pct===100?'ok':pct>=50?'warn':'bad';
+  h+=`<div class="kpis" style="margin-bottom:14px">
+   <div class="kpi ${g}"><div class="l">Semana del ${fDate(chkWeek())}</div>
+    <div class="v">${done.size}<small>/${tot}</small></div>
+    <div class="bar"><i style="width:${pct}%;background:var(--${g==='ok'?'ok':g==='warn'?'warn':'bad'})"></i></div>
+    <div class="d">${pct}% del control hecho</div></div>
+   <div class="kpi te"><div class="l">Semanas completas</div><div class="v">${semanas}</div>
+    <div class="d">controles cerrados en todo el viaje</div></div></div>`;
+  if(pct===100)h+=`<div class="banner g">Control de la semana cerrado. Marcá también <b>“Chequeo mecánico semanal”</b> en Rutinas para que sume los puntos.</div>`;
+  h+=`<div class="hint" style="padding:0 4px 10px">Se reinicia solo cada lunes y queda el historial. Los ítems con <span class="tag warn">verificar</span> son datos que dependen de tu camioneta y que conviene confirmar una vez, antes de salir.</div>`;
+
+  CHK_SECS.forEach(sec=>{
+   const hechos=sec.items.filter(i=>done.has(i.id)).length;
+   h+=`<div class="sec-t">${sec.n}. ${sec.t} · ${hechos}/${sec.items.length} <span style="text-transform:none;letter-spacing:0;font-weight:600">— ${esc(sec.s)}</span></div><div class="card">
+    ${sec.items.map(i=>{const ok=done.has(i.id);
+     return `<div class="li" style="align-items:flex-start">
+      <button class="x" style="font-size:19px;color:${ok?'var(--ok)':'var(--tx3)'};padding-top:2px" onclick="chkTog('${i.id}')">${ok?'☑':'☐'}</button>
+      <div class="m"><b style="white-space:normal;${ok?'color:var(--tx3);text-decoration:line-through;font-weight:400':''}">${esc(i.t)}
+       ${i.v?' <span class="tag warn" style="font-size:9.5px;vertical-align:middle">verificar</span>':''}</b>
+       <span style="white-space:normal;display:block;margin-top:3px;line-height:1.45">${esc(i.d)}</span></div></div>`;}).join('')}
+    </div>`;});
+
+  h+=`<div class="sec-t">Rangos en vivo — qué mirar en la app</div><div class="card">
+   <div style="overflow-x:auto"><table>
+   <tr><th>PID</th><th>Normal</th><th>Alarma</th></tr>
+   ${CHK_PIDS.map(([k,n,ok,bad])=>`<tr>
+    <td><b style="font-family:ui-monospace,monospace;font-size:12px">${esc(k)}</b><br><span class="muted" style="font-size:11.5px">${esc(n)}</span></td>
+    <td style="color:var(--ok);font-weight:700;white-space:nowrap">${esc(ok)}</td>
+    <td style="font-size:12.5px">${esc(bad)}</td></tr>`).join('')}
+   </table></div></div>`;
+
+  h+=`<div class="sec-t">Cómo manejarla en la Panamericana</div>`;
+  CHK_TIPS.forEach(t=>{h+=`<div class="banner ${t.k}"><b>${esc(t.t)}</b><br>${esc(t.d)}</div>`;});
+  h+=`<div class="btnrow"><button class="btn" onclick="if(confirm('¿Reiniciar el control de esta semana?')){REAL.chk['${chkWeek()}']={w:'${chkWeek()}',ids:[],ua:now()};saveReal();renderCamioneta();}">Reiniciar la semana</button></div>`;
+  $('#v-camioneta').innerHTML=h;return;}
 
  if(camTab==='motor'){
   h+=`<div class="card"><h3>🔧 Croquis del motor <span class="r">F-150 5.0 V8 Coyote</span></h3>

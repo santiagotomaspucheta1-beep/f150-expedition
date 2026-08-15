@@ -3,7 +3,7 @@
    instalación y sirve desde caché cuando la red falla.
    Subí el número de VERSION cada vez que cambies vida-ruta.html, si no el
    celular sigue mostrando la versión vieja. */
-const VERSION = 'vr-v4';
+const VERSION = 'vr-v5';
 const SHELL = [
   './vida-ruta.html',
   './cocina.html',
