@@ -1382,11 +1382,39 @@ function saveIdeaC(){const t=$('#cT').value.trim();if(!t)return;const id=uid();
 /* --------------------------------------------------------------------------
    CAMIONETA
    -------------------------------------------------------------------------- */
+let camTab='estado';
 function renderCamioneta(){
  const c=calc(),odo=c.odoNow||c.odo0||0;
  const hist=Object.values(REAL.mant).filter(m=>!m.del).sort((a,b)=>b.date.localeCompare(a.date));
  const inc=Object.values(REAL.inc2).filter(i=>!i.del).sort((a,b)=>b.date.localeCompare(a.date));
- let h='';
+ let h=`<div class="seg" style="margin-bottom:14px">${[['estado','Estado y services'],['motor','Croquis del motor'],['electrico','Panel eléctrico']]
+  .map(([k,l])=>`<button class="${camTab===k?'on':''}" onclick="camTab='${k}';renderCamioneta()">${l}</button>`).join('')}</div>`;
+
+ if(camTab==='motor'){
+  h+=`<div class="card"><h3>🔧 Croquis del motor <span class="r">F-150 5.0 V8 Coyote</span></h3>
+   <a href="croquis-motor.jpg" target="_blank" title="Tocá para abrirlo en grande">
+    <img src="croquis-motor.jpg" alt="Croquis del motor con las 15 referencias" style="width:100%;border-radius:10px;border:1px solid var(--line);display:block"></a>
+   <div class="hint">Tocá la imagen para abrirla en grande y hacer zoom.</div></div>`;
+  // Los cinco puntos que el propio croquis marca en rojo. Se repiten acá porque
+  // es lo que hay que mirar con el capó abierto, no lo que hay que leer.
+  h+=`<div class="card"><h3>El chequeo de 2 minutos <span class="r">los rojos del croquis</span></h3>
+   ${[["8","Refrigerante","Nivel entre MIN y MAX, con el motor FRÍO."],
+      ["9","Tapa del sistema","NUNCA abrirla con el motor caliente."],
+      ["10","Varilla de aceite","Motor frío y en plano. Es el chequeo diario en ruta."],
+      ["11","Líquido de frenos","Si baja: pastillas gastadas o pérdida."],
+      ["3","Bornes auxiliares","De ahí sale el DC-DC del camper. Que estén firmes."]]
+   .map(([n,t,d])=>`<div class="li"><div class="ic" style="background:#ffebee;color:var(--bad);font-weight:800">${n}</div>
+    <div class="m"><b>${t}</b><span>${d}</span></div></div>`).join('')}
+   <div class="note">Esto es lo mismo que la rutina <b>“Chequeo pre-marcha”</b> de la pestaña Rutinas. Marcala ahí cuando lo hagas y queda registrado.</div></div>`;
+  $('#v-camioneta').innerHTML=h;return;}
+
+ if(camTab==='electrico'){
+  h+=`<div class="card" style="padding:0;overflow:hidden">
+   <iframe src="panel-electrico.html" title="Panel eléctrico"
+    style="width:100%;height:calc(100vh - 240px);min-height:520px;border:0;display:block"></iframe></div>
+   <div class="hint" style="padding:0 4px"><a href="panel-electrico.html" target="_blank">Abrir el panel eléctrico en pantalla completa</a>.</div>`;
+  $('#v-camioneta').innerHTML=h;return;}
+
  h+=`<div class="kpis" style="margin-bottom:14px">
   <div class="kpi"><div class="l">Odómetro</div><div class="v">${n0(odo)}<small> mi</small></div>
    <div class="d">${n0(c.millas)} millas de viaje · ${n0(c.kmReal)} km</div></div>
