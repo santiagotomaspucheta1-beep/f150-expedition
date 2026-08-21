@@ -255,6 +255,20 @@
     grid-auto-rows: minmax(28px, auto);
     padding-bottom: 6px;
   }
+  /* Tipo de día: manejo (ruta larga) vs camping (parque, traslado corto o base).
+     El umbral son 4 h: menos que eso es un traslado que entra cómodo en un día
+     de parque, más que eso el día se va en la ruta. */
+  .calendar-week-bg-cell.d-manejo { background: rgba(235,104,52,.13); }
+  .calendar-week-bg-cell.d-camping { background: rgba(27,175,122,.10); }
+  .day-tag { font-size:9.5px; font-weight:800; letter-spacing:.02em; padding:1px 5px;
+    border-radius:4px; white-space:nowrap; margin-left:5px; vertical-align:1px; }
+  .day-tag.manejo  { background:#eb6834; color:#fff; }
+  .day-tag.camping { background:rgba(27,175,122,.20); color:#0f7a53; }
+  .calendar-week-bg-cell { position: relative; }
+  .cal-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+    font-size:12px; color:#475569; margin:10px 0 4px; font-weight:600; }
+  .cal-legend i { display:inline-block; width:11px; height:11px; border-radius:3px;
+    margin-right:5px; vertical-align:-1px; }
   .calendar-day-num-wrapper {
     padding: 6px 8px;
     font-size: 14px;
@@ -728,45 +742,40 @@
 <script>
 /* ================= DATOS POR DEFECTO ================= */
 const DEFAULT_STOPS = [
- // ---- BLOQUE 1 · Cruce del Medio Oeste (24-30 ago) ----
- {n:"Chattanooga, TN — SALIDA", start:"2026-08-24", end:"2026-08-24", lat:35.0456, lon:-85.3097, b:1, note:"Día 1. Carrito enganchado, camioneta pesada en CAT Scale, mudanza ya despachada o cargada."},
- {n:"Land Between the Lakes, KY", start:"2026-08-25", end:"2026-08-25", lat:36.79, lon:-88.06, b:1, note:"Primera noche. Test real del carrito y del consumo con remolque."},
- {n:"St. Louis, MO — Gateway Arch", start:"2026-08-26", end:"2026-08-26", lat:38.6247, lon:-90.1848, b:1, note:"Parada urbana corta. Buen lugar para revisar luces y cadenas del carrito."},
- {n:"Kansas City, MO", start:"2026-08-27", end:"2026-08-27", lat:39.0997, lon:-94.5786, b:1, note:"Kilómetros de transferencia. Barbacoa obligatoria."},
- {n:"Omaha / Lincoln, NE", start:"2026-08-28", end:"2026-08-28", lat:41.2565, lon:-95.9345, b:1, note:"Última noche de llanura antes de las Badlands."},
- {n:"Badlands NP, SD", start:"2026-08-29", end:"2026-08-30", lat:43.855, lon:-102.34, b:2, note:"Primer parque del pase. Scenic Loop al amanecer. Samy no entra a los senderos."},
- // ---- BLOQUE 2 · Black Hills y Wyoming (31 ago - 4 sep) ----
- {n:"Black Hills / Custer SP / Rushmore, SD", start:"2026-08-31", end:"2026-09-01", lat:43.76, lon:-103.45, b:2, note:"Custer es parque ESTATAL: entrada aparte (~USD 25), no la cubre el pase federal. Dog-friendly."},
- {n:"Devils Tower, WY", start:"2026-09-02", end:"2026-09-02", lat:44.590, lon:-104.715, b:2, note:"Monumento nacional, cubierto por el pase. Parada de medio día."},
- {n:"Bighorn Mountains / Buffalo, WY", start:"2026-09-03", end:"2026-09-03", lat:44.35, lon:-106.70, b:3, note:"Cloud Peak Skyway. National Forest: acampe libre y Samy suelto."},
- {n:"Cody, WY", start:"2026-09-04", end:"2026-09-04", lat:44.526, lon:-109.056, b:3, note:"Abastecimiento y laundry antes de Yellowstone."},
- // ---- BLOQUE 3 · Labor Day lejos de los parques (5-6 sep) ----
- {n:"Beartooth Highway / Red Lodge, MT", start:"2026-09-05", end:"2026-09-06", lat:45.186, lon:-109.247, b:3, note:"Fin de semana largo de Labor Day: la ruta más linda del país y sin la multitud de Yellowstone. Ojo: 3.337 m, con carrito se sube lento."},
- // ---- BLOQUE 4 · Yellowstone y Tetons (7-13 sep) ----
- {n:"Yellowstone NP, WY", start:"2026-09-07", end:"2026-09-10", lat:44.46, lon:-110.83, b:4, note:"Entrada noreste por Lamar Valley el lunes, cuando se va la gente del finde largo. Recargo de no residente si no tienen el pase."},
- {n:"Grand Teton / Jackson, WY", start:"2026-09-11", end:"2026-09-13", lat:43.48, lon:-110.76, b:4, note:"Reservar camping. Cierre del bloque de montaña."},
- // ---- BLOQUE 5 · Hacia Montana (14-15 sep) ----
- {n:"Craters of the Moon / Idaho Falls, ID", start:"2026-09-14", end:"2026-09-14", lat:43.47, lon:-112.03, b:5, note:"Paisaje volcánico, monumento nacional cubierto por el pase."},
- {n:"Missoula, MT", start:"2026-09-15", end:"2026-09-15", lat:46.87, lon:-113.99, b:5, note:"Última ciudad grande antes de Glacier. Service si hace falta."},
- // ---- BLOQUE 6 · Glacier (16-18 sep) ----
- {n:"Glacier NP, MT", start:"2026-09-16", end:"2026-09-18", lat:48.50, lon:-113.99, b:5, note:"Going-to-the-Sun Road: verificar reserva horaria y el límite de largo del vehículo — CON CARRITO no se puede pasar de Avalanche Creek. Desenganchar en el camping."},
- // ---- BLOQUE 7 · Bajada al Pacífico (19-21 sep) ----
- {n:"Coeur d'Alene / Spokane, WA", start:"2026-09-19", end:"2026-09-19", lat:47.66, lon:-117.43, b:6, note:"Día de ruta. Lago para Samy."},
- {n:"Columbia River Gorge / Hood River, OR", start:"2026-09-20", end:"2026-09-20", lat:45.71, lon:-121.52, b:6, note:"Cascadas sobre la ruta 30. Multnomah Falls."},
- {n:"Portland / Mount Hood, OR", start:"2026-09-21", end:"2026-09-21", lat:45.515, lon:-122.68, b:6, note:"Ciudad, comida y sin impuesto a las ventas: si falta comprar algo, es acá."},
- // ---- BLOQUE 8 · Costa (22-25 sep) ----
- {n:"Cannon Beach / Newport, OR", start:"2026-09-22", end:"2026-09-22", lat:45.89, lon:-123.96, b:7, note:"Casi todas las playas de Oregon admiten perros sueltos. El mejor tramo para Samy del viaje."},
- {n:"Bandon / Gold Beach, OR", start:"2026-09-23", end:"2026-09-23", lat:43.12, lon:-124.41, b:7, note:"Costa sur de Oregon, la parte menos turística y más linda."},
- {n:"Redwood NP, CA", start:"2026-09-24", end:"2026-09-24", lat:41.21, lon:-124.00, b:7, note:"Entrada a California. Secuoyas costeras."},
- {n:"Mendocino / Fort Bragg, CA", start:"2026-09-25", end:"2026-09-25", lat:39.44, lon:-123.80, b:7, note:"Glass Beach. Ruta 1 con carrito: lenta y con curvas cerradas, calcular el doble de tiempo."},
- // ---- BLOQUE 9 · California y venta (26 sep - 6 oct) ----
- {n:"San Francisco, CA", start:"2026-09-26", end:"2026-09-27", lat:37.77, lon:-122.42, b:8, note:"Golden Gate. Estacionar con carrito en SF es un problema: buscar lote de camiones fuera del centro."},
- {n:"Big Sur / Highway 1, CA", start:"2026-09-28", end:"2026-09-28", lat:36.27, lon:-121.81, b:8, note:"Último tramo de costa antes de la base."},
- {n:"Los Ángeles / Inland Empire — BASE DE VENTA", start:"2026-09-29", end:"2026-09-30", lat:34.05, lon:-118.24, b:9, note:"Base fija. Publicar avisos como disponibles YA, smog check, visitas de compradores. Alojamiento con lugar para estacionar el rig."},
- {n:"Joshua Tree NP, CA", start:"2026-10-01", end:"2026-10-02", lat:33.87, lon:-115.90, b:9, note:"Salida de un día desde la base mientras corre la venta. Cubierto por el pase."},
- {n:"San Diego, CA", start:"2026-10-03", end:"2026-10-04", lat:32.72, lon:-117.16, b:9, note:"Playas dog-friendly (Ocean Beach). Segundo mercado de camionetas si LA no cierra."},
- {n:"Los Ángeles — CIERRE DE VENTA", start:"2026-10-05", end:"2026-10-05", lat:34.05, lon:-118.24, b:9, note:"FECHA LÍMITE: si no hay comprador privado firme, la camioneta va a CarMax por el piso. Entregar la mudanza en el depósito de la naviera."},
- {n:"LAX — VUELO A CÓRDOBA 🏁", start:"2026-10-06", end:"2026-10-06", lat:33.9416, lon:-118.4085, b:9, note:"Aeroméxico LAX → MEX → EZE. Samy en bodega: presentarse 4 h antes con jaula IATA, certificado APHIS y permiso SENASA."}
+ // ══ BLOQUE 1 · Cruce hasta las Badlands (24-30 ago) ══
+ {n:"Chattanooga, TN — SALIDA", start:"2026-08-24", end:"2026-08-24", lat:35.0456, lon:-85.3097, b:1, dh:0, dkm:0, note:"Día 1. Carrito enganchado, camioneta pesada en CAT Scale, mudanza cargada. Salir temprano: el primer día se pierde una hora en acomodar todo."},
+ {n:"Memphis, TN", start:"2026-08-24", end:"2026-08-24", lat:35.1495, lon:-90.0490, b:1, dh:6.7, dkm:539, note:"Primera noche y primer test real del carrito: frenada, consumo y si algo se movió atrás."},
+ {n:"Ozark NF / Buffalo River, AR", start:"2026-08-25", end:"2026-08-26", lat:36.02, lon:-93.36, b:1, dh:4.9, dkm:393, note:"Dos noches. National Forest: acampe libre, río y Samy suelto. El mejor lugar del tramo este para el perro."},
+ {n:"Wichita, KS", start:"2026-08-27", end:"2026-08-27", lat:37.6872, lon:-97.3301, b:2, dh:6.2, dkm:499, note:"Noche de paso. Reabastecer antes de las llanuras."},
+ {n:"Monument Rocks, KS", start:"2026-08-28", end:"2026-08-28", lat:38.79, lon:-100.76, b:2, dh:5.1, dkm:405, note:"Las 'pirámides' de creta en medio de la nada. Tierra privada con acceso público: entrar y salir con luz."},
+ {n:"Badlands NP, SD", start:"2026-08-29", end:"2026-08-30", lat:43.855, lon:-102.34, b:3, dh:9.0, dkm:723, note:"DÍA LARGO: 9 h, el más pesado del viaje. Primer parque del pase. Scenic Loop al amanecer."},
+ // ══ BLOQUE 2 · Black Hills y Devils Tower (31 ago - 2 sep) ══
+ {n:"Black Hills / Custer SP / Rushmore, SD", start:"2026-08-31", end:"2026-09-01", lat:43.76, lon:-103.45, b:3, dh:1.4, dkm:112, note:"Traslado corto. Custer es parque ESTATAL: entrada aparte (~USD 25), no lo cubre el pase federal. Dog-friendly, de los pocos donde Samy camina."},
+ {n:"Devils Tower, WY", start:"2026-09-02", end:"2026-09-02", lat:44.590, lon:-104.715, b:3, dh:2.1, dkm:171, note:"Traslado corto + visita. Monumento nacional, cubierto por el pase."},
+ // ══ BLOQUE 3 · Montana (3-7 sep) ══
+ {n:"Bozeman, MT", start:"2026-09-03", end:"2026-09-03", lat:45.677, lon:-111.043, b:4, dh:8.0, dkm:638, note:"Día largo cruzando Wyoming y Montana. Abastecimiento, laundry y service si hace falta."},
+ {n:"Glacier NP, MT", start:"2026-09-04", end:"2026-09-07", lat:48.50, lon:-113.99, b:4, dh:6.0, dkm:481, note:"Cuatro noches, incluye el finde largo de Labor Day (5-7 sep): mejor quedarse quietos que manejar. RESERVAR camping con tiempo. OJO CON EL CARRITO: Going-to-the-Sun Road tiene límite de largo — desengancharlo en el camping."},
+ // ══ BLOQUE 4 · Yellowstone y Tetons (8-13 sep) ══
+ {n:"Yellowstone NP, WY", start:"2026-09-08", end:"2026-09-10", lat:44.46, lon:-110.83, b:5, dh:8.0, dkm:638, note:"Día largo bajando de Montana. Entran el martes, cuando se va la gente del finde largo. Perros solo en áreas desarrolladas."},
+ {n:"Grand Teton / Jackson, WY", start:"2026-09-11", end:"2026-09-13", lat:43.48, lon:-110.76, b:5, dh:1.7, dkm:136, note:"Traslado corto desde Yellowstone. Tres noches. Cierre del bloque de montaña."},
+ // ══ BLOQUE 5 · Colorado (14-18 sep) ══
+ {n:"Rocky Mountain NP / Estes Park, CO", start:"2026-09-14", end:"2026-09-15", lat:40.377, lon:-105.52, b:6, dh:8.7, dkm:692, note:"Día largo bajando por Wyoming. Trail Ridge Road llega a 3.700 m: con el carrito se sube muy lento, calcular el doble de tiempo."},
+ {n:"Denver, CO", start:"2026-09-16", end:"2026-09-16", lat:39.74, lon:-104.99, b:6, dh:1.3, dkm:105, note:"Parada logística, no turística: laundry, service, repuestos y compras. Última ciudad grande antes de Utah."},
+ {n:"Ouray / Million Dollar Hwy, CO", start:"2026-09-17", end:"2026-09-18", lat:38.02, lon:-107.67, b:6, dh:4.7, dkm:376, note:"La US-550 por las San Juan Mountains: la ruta más linda de Colorado. Con carrito, curvas cerradas y sin guardarraíl — ir despacio."},
+ // ══ BLOQUE 6 · Utah (19-24 sep) ══
+ {n:"Moab — Arches + Canyonlands, UT", start:"2026-09-19", end:"2026-09-20", lat:38.61, lon:-109.55, b:7, dh:2.8, dkm:221, note:"Dos parques del pase en un solo lugar. Mucho camping BLM gratis alrededor."},
+ {n:"Capitol Reef NP, UT", start:"2026-09-21", end:"2026-09-21", lat:38.29, lon:-111.26, b:7, dh:2.4, dkm:191, note:"Scenic Byway 24. El parque menos visitado de los cinco de Utah."},
+ {n:"Bryce Canyon NP, UT", start:"2026-09-22", end:"2026-09-22", lat:37.59, lon:-112.19, b:7, dh:1.8, dkm:141, note:"A 2.400 m: en septiembre las noches ya bajan de cero. Sacar las bolsas de abrigo."},
+ {n:"Zion NP, UT", start:"2026-09-23", end:"2026-09-24", lat:37.30, lon:-113.03, b:7, dh:1.3, dkm:101, note:"El Pa'rus Trail admite perros, raro en un parque nacional. Ojo: el túnel de Zion cobra aparte y tiene límite de tamaño para vehículos grandes."},
+ // ══ BLOQUE 7 · A California (25-28 sep) ══
+ {n:"Sequoia & Kings Canyon NP, CA", start:"2026-09-25", end:"2026-09-26", lat:36.49, lon:-118.57, b:8, dh:8.3, dkm:670, note:"DÍA LARGO de 8,3 h pasando por Las Vegas sin parar (nada de ciudades grandes hasta el final). Los árboles más grandes del planeta."},
+ {n:"Yosemite NP, CA", start:"2026-09-27", end:"2026-09-28", lat:37.865, lon:-119.54, b:8, dh:2.7, dkm:219, note:"Traslado corto desde Sequoia. Reservar camping con mucha anticipación. Última parada antes de la base de venta."},
+ // ══ BLOQUE 8 · Los Ángeles: venta y salida (29 sep - 6 oct) ══
+ {n:"Los Ángeles / Inland Empire — BASE DE VENTA", start:"2026-09-29", end:"2026-09-30", lat:34.05, lon:-118.24, b:9, dh:6.9, dkm:550, note:"Bajada directa por el valle (Fresno–Bakersfield–I-5), sin pasar por San Francisco ni San José. Base fija: avisos como disponibles YA, smog check y visitas de compradores."},
+ {n:"Joshua Tree NP, CA", start:"2026-10-01", end:"2026-10-02", lat:33.87, lon:-115.90, b:9, dh:2.5, dkm:200, note:"Salida de un día desde la base mientras corre la venta. Cubierto por el pase. En octubre todavía hace 35°: Samy nunca solo en la camioneta."},
+ {n:"San Diego, CA", start:"2026-10-03", end:"2026-10-04", lat:32.72, lon:-117.16, b:9, dh:2.6, dkm:190, note:"Playas dog-friendly (Ocean Beach). Segundo mercado de camionetas por si Los Ángeles no cierra."},
+ {n:"Los Ángeles — CIERRE DE VENTA", start:"2026-10-05", end:"2026-10-05", lat:34.05, lon:-118.24, b:9, dh:2.6, dkm:190, note:"FECHA LÍMITE: si no hay comprador privado firme, la camioneta va a CarMax por el piso. Entregar la mudanza en el depósito de la naviera."},
+ {n:"LAX — VUELO A CÓRDOBA 🏁", start:"2026-10-06", end:"2026-10-06", lat:33.9416, lon:-118.4085, b:9, dh:0.7, dkm:50, note:"Aeroméxico LAX → MEX → EZE. Samy en bodega: presentarse 4 h antes con jaula IATA, certificado APHIS y permiso SENASA."}
 ];
 
 const CATS = {
@@ -923,7 +932,7 @@ function migrateStops(stops) {
 // Esta app arranca de cero, así que en el primer arranque no hacen nada.
 // Para publicar un cambio de datos después: editá el DEFAULT_* y subí la
 // versión de acá abajo.
-const ITEMS_VERSION = 1, STOPS_VERSION = 1, EXPENSES_VERSION = 1, SALES_VERSION = 1;
+const ITEMS_VERSION = 1, STOPS_VERSION = 2, EXPENSES_VERSION = 2, SALES_VERSION = 1;
 
 function migrateItems(state) {
   if ((state.itemsVersion || 0) >= ITEMS_VERSION) return false;
@@ -962,10 +971,10 @@ const DEFAULT_BUDGET = {
   // distinto en el Medio Oeste que en California.
   perDayUsd: {
     // USD por día para LOS DOS (no por persona).
-    comida:      { "Medio Oeste": 40, "Montañas": 45, "Noroeste": 42, "California": 50 },
+    comida:      { "Llanuras": 38, "Montañas": 45, "Colorado y Utah": 44, "California": 50 },
     // Mayormente camper y camping; California sube fuerte por los días de base
     // en Los Ángeles con alojamiento pago mientras corre la venta.
-    alojamiento: { "Medio Oeste": 14, "Montañas": 20, "Noroeste": 22, "California": 45 },
+    alojamiento: { "Llanuras": 12, "Montañas": 20, "Colorado y Utah": 16, "California": 45 },
     otros: 8
   },
   fuel: {
@@ -975,7 +984,7 @@ const DEFAULT_BUDGET = {
     kmPerLiter: 21,
     // USD por litro, agosto 2026. California es el estado más caro del país
     // (~USD 5,10/galón); el Medio Oeste el más barato.
-    pricePerLiter: { "Medio Oeste": 0.85, "Montañas": 0.92, "Noroeste": 1.05, "California": 1.35 }
+    pricePerLiter: { "Llanuras": 0.83, "Montañas": 0.92, "Colorado y Utah": 0.95, "California": 1.35 }
   },
   oneOff: [
     // — Ordenado de mayor a menor. Investigado 20-21/8/2026. —
@@ -1575,13 +1584,21 @@ function renderList(){
 
     const next = state.stops[i + 1];
     if (next) {
-      const leg = legEstimate(s, next);
-      totalKm += leg.km; totalHours += leg.hours;
+      // Si la parada siguiente trae los km y horas REALES del tramo (dh/dkm,
+      // calculados al armar la ruta), se usan esos. La estimación por línea
+      // recta queda para paradas agregadas a mano desde el mapa.
+      const real = (Number(next.dkm) > 0) || (Number(next.dh) > 0);
+      const legKm = real ? Number(next.dkm) || 0 : legEstimate(s, next).km;
+      const legH  = real ? Number(next.dh)  || 0 : legEstimate(s, next).hours;
+      totalKm += legKm; totalHours += legH;
       const legEl = document.createElement("div");
       legEl.className = "leg-info";
-      const isUsLeg = listCountries[i + 1] === "Estados Unidos";
-      const miText = isUsLeg ? " (" + Math.round(leg.km * 0.621371).toLocaleString('es-AR') + " mi)" : "";
-      legEl.innerHTML = "🚗 <b>" + Math.round(leg.km).toLocaleString('es-AR') + " km" + miText + "</b> · ~" + formatDuration(leg.hours) + " de manejo";
+      const miText = " (" + Math.round(legKm * 0.621371).toLocaleString('es-AR') + " mi)";
+      const esManejo = legH >= UMBRAL_MANEJO_H;
+      legEl.innerHTML = (esManejo ? "🚗 " : "⛺ ")
+        + "<b>" + Math.round(legKm).toLocaleString('es-AR') + " km" + miText + "</b> · ~"
+        + formatDuration(legH) + (esManejo ? " — día de manejo" : " — traslado corto");
+      if (esManejo) legEl.style.color = "#c2410c";
       el.appendChild(legEl);
     }
   });
@@ -1831,7 +1848,37 @@ function renderAll(){
 let calSelectedIdx = -1;
 let calCurrentDate = new Date(2026, 7, 1); // Agosto 2026
 
+// Un día es DE MANEJO si alguna parada EMPIEZA ese día con dh >= 4 horas.
+// Los traslados cortos (Badlands→Black Hills, Bryce→Zion) no cuentan: entran
+// cómodos dentro de un día de parque.
+const UMBRAL_MANEJO_H = 4;
+function buildDriveIndex() {
+  const idx = {};
+  (state.stops || []).forEach(st => {
+    if (!st.start) return;
+    const h = Number(st.dh) || 0;
+    if (h >= UMBRAL_MANEJO_H) {
+      idx[st.start] = Math.max(idx[st.start] || 0, h);
+    }
+  });
+  return idx;
+}
+// Todos los días que el viaje cubre, para poder marcar los que NO son de manejo
+// como días de camping (y no pintar los días fuera del viaje).
+function buildTripDaySet() {
+  const set = new Set();
+  (state.stops || []).forEach(st => {
+    if (!st.start || !st.end) return;
+    let d = new Date(st.start + 'T00:00:00');
+    const end = new Date(st.end + 'T00:00:00');
+    while (d <= end) { set.add(d.toISOString().split('T')[0]); d = new Date(d.getTime() + 86400000); }
+  });
+  return set;
+}
+
 function renderCalendar() {
+  const driveIdx = buildDriveIndex();
+  const diasDelViaje = buildTripDaySet();
   const container = document.getElementById("page-cal");
   if (!container) return;
 
@@ -2022,7 +2069,9 @@ function renderCalendar() {
     week.forEach(d => {
       const isOther = !d.isCurrentMonth ? ' other-month' : '';
       const dateStr = d.date.toISOString().split('T')[0];
-      weekHtml += `<div class="calendar-week-bg-cell${isOther}" data-date="${dateStr}"></div>`;
+      const driveH = driveIdx[dateStr];
+      const tipoCls = driveH ? ' d-manejo' : (diasDelViaje.has(dateStr) ? ' d-camping' : '');
+      weekHtml += `<div class="calendar-week-bg-cell${isOther}${tipoCls}" data-date="${dateStr}"></div>`;
     });
     weekHtml += `</div>`;
 
@@ -2033,8 +2082,16 @@ function renderCalendar() {
       const dateStr = d.date.toISOString().split('T')[0];
       const isToday = dateStr === todayStr;
       const todayClass = isToday ? ' today' : '';
+      const dH = driveIdx[dateStr];
+      const enViaje = diasDelViaje.has(dateStr);
+      let tag = '';
+      if (dH) {
+        tag = `<span class="day-tag manejo" title="Día de manejo: ${String(dH).replace('.', ',')} horas">🚗 ${String(dH).replace('.', ',')} h</span>`;
+      } else if (enViaje) {
+        tag = `<span class="day-tag camping" title="Día de camping: parque, traslado corto o base de venta">⛺</span>`;
+      }
       weekHtml += `<div class="calendar-day-num-wrapper${todayClass}" style="grid-column: ${colIdx + 1}; grid-row: 1;">`;
-      weekHtml += `<span>${d.dayNum}</span>`;
+      weekHtml += `<span>${d.dayNum}</span>${tag}`;
       weekHtml += `</div>`;
     });
 
@@ -2059,6 +2116,12 @@ function renderCalendar() {
     gridWeeksHtml += weekHtml;
   });
 
+  const nManejo = Object.keys(driveIdx).length;
+  const hManejo = Object.values(driveIdx).reduce((x, y) => x + y, 0);
+  html += `<div class="cal-legend">
+    <span><i style="background:#eb6834"></i>🚗 Día de manejo — ${nManejo} en todo el viaje, ${hManejo.toFixed(0)} h en total (promedio ${(hManejo / (nManejo || 1)).toFixed(1)} h)</span>
+    <span><i style="background:rgba(27,175,122,.45)"></i>⛺ Día de camping — parque, traslado corto o base de venta</span>
+  </div>`;
   html += `<div class="calendar-weeks-container">`;
   html += gridWeeksHtml;
   html += `</div>`;
@@ -2896,19 +2959,18 @@ function delSaleItem(idx) {
 // caso puntual, de la nota (note). El viaje es lineal (un país a la vez, en orden
 // cronológico) así que alcanza con esta tabla de keywords + "carry-forward".
 const COUNTRY_PATTERNS = [
-  // Ya no son países: la Expedición EEUU se divide por ESTADO, y los estados se
+  // No son países: la Expedición EEUU se divide por ESTADO, y los estados se
   // agrupan en 4 regiones (ver REGION_BY_COUNTRY). Se detecta por la sigla del
   // estado al final del nombre de la parada, ej. "Cody, WY".
   { country: "Tennessee",      re: /,\s*TN\b|chattanooga/i },
-  { country: "Kentucky",       re: /,\s*KY\b/i },
-  { country: "Missouri",       re: /,\s*MO\b/i },
-  { country: "Nebraska",       re: /,\s*NE\b/i },
+  { country: "Arkansas",       re: /,\s*AR\b/i },
+  { country: "Kansas",         re: /,\s*KS\b/i },
   { country: "Dakota del Sur", re: /,\s*SD\b/i },
   { country: "Wyoming",        re: /,\s*WY\b/i },
   { country: "Montana",        re: /,\s*MT\b/i },
-  { country: "Idaho",          re: /,\s*ID\b/i },
-  { country: "Washington",     re: /,\s*WA\b/i },
-  { country: "Oregon",         re: /,\s*OR\b/i },
+  { country: "Colorado",       re: /,\s*CO\b/i },
+  { country: "Utah",           re: /,\s*UT\b/i },
+  { country: "Nevada",         re: /,\s*NV\b/i },
   { country: "California",     re: /,\s*CA\b|\bLAX\b/i }
 ];
 
@@ -2986,31 +3048,30 @@ function computeCountryDays() {
 }
 
 const REGION_BY_COUNTRY = {
-  "Tennessee": "Medio Oeste",
-  "Kentucky": "Medio Oeste",
-  "Missouri": "Medio Oeste",
-  "Nebraska": "Medio Oeste",
+  "Tennessee": "Llanuras",
+  "Arkansas": "Llanuras",
+  "Kansas": "Llanuras",
   "Dakota del Sur": "Montañas",
   "Wyoming": "Montañas",
   "Montana": "Montañas",
-  "Idaho": "Montañas",
-  "Washington": "Noroeste",
-  "Oregon": "Noroeste",
+  "Colorado": "Colorado y Utah",
+  "Utah": "Colorado y Utah",
+  "Nevada": "Colorado y Utah",
   "California": "California"
 };
-const REGION_ORDER = ["Medio Oeste", "Montañas", "Noroeste", "California"];
+const REGION_ORDER = ["Llanuras", "Montañas", "Colorado y Utah", "California"];
 const REGION_COLORS = {
-  "Medio Oeste": "#2a78d6",
+  "Llanuras": "#2a78d6",
   "Montañas": "#eb6834",
-  "Noroeste": "#1baf7a",
+  "Colorado y Utah": "#1baf7a",
   "California": "#eda100"
 };
 
 function computeRegionBreakdown(countryDays) {
-  const totals = { "Medio Oeste": 0, "Montañas": 0, "Noroeste": 0, "California": 0 };
+  const totals = { "Llanuras": 0, "Montañas": 0, "Colorado y Utah": 0, "California": 0 };
   let grandTotal = 0;
   countryDays.forEach(({ country, days }) => {
-    const region = REGION_BY_COUNTRY[country] || "Medio Oeste";
+    const region = REGION_BY_COUNTRY[country] || "Llanuras";
     totals[region] += days;
     grandTotal += days;
   });
@@ -3028,7 +3089,7 @@ function computeRegionBreakdown(countryDays) {
 // con cursor de país que ya usa computeCountryDays.
 function computeFuelKmByRegion() {
   const stops = state.stops || [];
-  const totals = { "Medio Oeste": 0, "Montañas": 0, "Noroeste": 0, "California": 0 };
+  const totals = { "Llanuras": 0, "Montañas": 0, "Colorado y Utah": 0, "California": 0 };
   let prevCountry = "Tennessee";
   const countries = stops.map(s => {
     const c = inferStopCountry(s, prevCountry);
@@ -3045,7 +3106,7 @@ function computeFuelKmByRegion() {
                 Math.cos(s1.lat * Math.PI / 180) * Math.cos(s2.lat * Math.PI / 180) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.25;
-      const region = REGION_BY_COUNTRY[countries[i + 1]] || "Medio Oeste";
+      const region = REGION_BY_COUNTRY[countries[i + 1]] || "Llanuras";
       totals[region] += km;
     }
   }
@@ -3102,12 +3163,28 @@ function computeTripStats() {
   // así el total del tablero coincide con lo que ya se ve ahí. No se reutiliza
   // computeFuelKm() para esto: usa un factor de desvío distinto (1.25 vs 1.3 de
   // legEstimate) y está pensada solo como insumo del presupuesto de combustible.
+  // Cada parada trae los km y las horas REALES del tramo para llegar (dh/dkm),
+  // calculados a mano al armar la ruta. Si están, se usan: son mucho mejores que
+  // la estimación por línea recta. La estimación queda solo de respaldo para
+  // paradas que agregue el usuario a mano desde el mapa.
+  const tieneDatosReales = stops.some(st => Number(st.dh) > 0);
   let totalKm = 0, totalHours = 0;
-  for (let i = 0; i < stops.length - 1; i++) {
-    const leg = legEstimate(stops[i], stops[i + 1]);
-    totalKm += leg.km;
-    totalHours += leg.hours;
+  if (tieneDatosReales) {
+    stops.forEach(st => { totalKm += Number(st.dkm) || 0; totalHours += Number(st.dh) || 0; });
+  } else {
+    for (let i = 0; i < stops.length - 1; i++) {
+      const leg = legEstimate(stops[i], stops[i + 1]);
+      totalKm += leg.km;
+      totalHours += leg.hours;
+    }
   }
+
+  // Días de manejo: los que el calendario marca como tales (dh >= 4 h), no una
+  // división de las horas totales — si no, el Tablero y el Calendario dan
+  // números distintos para lo mismo.
+  const drivingDays = tieneDatosReales
+    ? stops.filter(st => (Number(st.dh) || 0) >= UMBRAL_MANEJO_H).length
+    : Math.ceil(totalHours / ASSUMED_DRIVE_HOURS_PER_DAY);
 
   const countryDays = computeCountryDays();
 
@@ -3115,7 +3192,7 @@ function computeTripStats() {
     tripDays,
     totalKm,
     totalHours,
-    estimatedDrivingDays: Math.ceil(totalHours / ASSUMED_DRIVE_HOURS_PER_DAY),
+    estimatedDrivingDays: drivingDays,
     countryDays,
     countriesCount: countryDays.length
   };
