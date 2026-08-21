@@ -1,15 +1,22 @@
-/* Service worker de Vida de Ruta.
-   Objetivo: que la app abra SIN SEÑAL. Cachea el shell (HTML + Leaflet) en la
-   instalación y sirve desde caché cuando la red falla.
-   Subí el número de VERSION cada vez que cambies vida-ruta.html, si no el
-   celular sigue mostrando la versión vieja. */
-const VERSION = 'vr-v7';
+/* Service worker de la Expedición EEUU 2026.
+   Objetivo: que la app ABRA sin señal (Bighorn, Beartooth y buena parte de
+   Glacier no tienen cobertura de ningún operador). Cachea el shell — el HTML
+   más Leaflet y Firebase — y lo sirve desde caché cuando la red falla.
+
+   OJO: los DATOS sí necesitan señal, porque viven en Firestore. Sin señal la
+   app abre y muestra lo último que Firestore dejó en su caché local, pero un
+   cambio que hagas offline no se sincroniza hasta que vuelva la conexión.
+
+   Subí VERSION cada vez que cambies index.html, si no el celular sigue
+   mostrando la versión vieja. */
+const VERSION = 'eeuu-v3';
 const SHELL = [
-  './vida-ruta.html',
-  './cocina.html',
-  './panel-electrico.html',
-  './croquis-motor.jpg',
+  './',
+  './index.html',
   './manifest.webmanifest',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
   'https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js',
@@ -19,9 +26,9 @@ const SHELL = [
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(VERSION)
-      // addAll falla entero si un recurso falla; los agrego de a uno para que
-      // una CDN caída no rompa la instalación completa.
-      .then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {}))))
+      // addAll falla entero si UN recurso falla; con allSettled cacheamos lo
+      // que se pueda y la instalación no se cae por un CDN lento.
+      .then(c => Promise.allSettled(SHELL.map(u => c.add(u))))
       .then(() => self.skipWaiting())
   );
 });
@@ -35,20 +42,31 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  const url = e.request.url;
-  // Firestore y los tiles del mapa NUNCA se cachean: son datos vivos.
-  if (url.includes('firestore.googleapis.com') || url.includes('basemaps.cartocdn.com')) return;
-  if (e.request.method !== 'GET') return;
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  // Firestore nunca se cachea: siempre tiene que hablar con la red o fallar
+  // limpio, para que su propia capa offline haga su trabajo.
+  if (/firestore\.googleapis\.com|google-analytics/.test(req.url)) return;
 
-  // Network-first con fallback a caché: si hay señal ves lo último,
-  // si no hay señal la app abre igual.
-  e.respondWith(
-    fetch(e.request)
-      .then(r => {
+  // Red primero para el HTML (así ven los cambios apenas hay señal),
+  // caché primero para el resto (Leaflet, Firebase, tiles).
+  if (req.mode === 'navigate' || req.destination === 'document') {
+    e.respondWith(
+      fetch(req).then(r => {
         const copy = r.clone();
-        caches.open(VERSION).then(c => c.put(e.request, copy)).catch(() => {});
+        caches.open(VERSION).then(c => c.put(req, copy));
         return r;
-      })
-      .catch(() => caches.match(e.request).then(r => r || caches.match('./vida-ruta.html')))
+      }).catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
+    );
+    return;
+  }
+  e.respondWith(
+    caches.match(req).then(hit => hit || fetch(req).then(r => {
+      if (r.ok && /leaflet|firebasejs/.test(req.url)) {
+        const copy = r.clone();
+        caches.open(VERSION).then(c => c.put(req, copy));
+      }
+      return r;
+    }).catch(() => hit))
   );
 });
