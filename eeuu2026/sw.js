@@ -9,7 +9,7 @@
 
    Subí VERSION cada vez que cambies index.html, si no el celular sigue
    mostrando la versión vieja. */
-const VERSION = 'eeuu-v3';
+const VERSION = 'eeuu-v4';
 const SHELL = [
   './',
   './index.html',
